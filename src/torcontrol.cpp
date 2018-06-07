@@ -358,7 +358,7 @@ public:
     /** Reconnect, after getting disconnected */
     void Reconnect();
 private:
-    struct event_base* base;
+    //struct event_base* base;
     std::string target;
     TorControlConnection conn;
     std::string private_key;
@@ -390,7 +390,6 @@ private:
 };
 
 TorController::TorController(struct event_base* base, const std::string& target):
-    base(base),
     target(target), conn(base), reconnect(true), reconnect_ev(0),
     reconnect_timeout(RECONNECT_TIMEOUT_START)
 {

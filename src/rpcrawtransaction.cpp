@@ -898,7 +898,20 @@ UniValue crosschaininitial(const UniValue &params, bool fHelp)
 {
     if (fHelp || params.size() !=2)
         throw runtime_error(
-            "params.size error\n"
+            "crosschaininitial \"crosschain address\" amount\n"
+            "\nCreate crosschain transaction (serialized, hex-encoded) to local node and network.\n"
+            "\nArguments:\n"
+	    "1. \"crosschain address\"  (string,required) The crosschainaddress to to send to .\n"
+            "2. \"amount\" (numeric or string,required) The amount in " + CURRENCY_UNIT + " to send. eg 0.1\n"
+            "\nResult:\n"
+	    "\"hex\"             (string) The secret in hex\n"
+            "\"hex\"             (string) The secret hash in hex\n"
+            "\"hex\"             (string) The contract for address in hex\n"
+            "\"hex\"             (string) The contract transaction hash in hex\n"
+            "\"hex\"             (string) The contract raw transaction in hex\n"
+            "\nExamples:\n"
+            "\nCreate a transaction\n"
+            + HelpExampleCli("crosschaininitial", "\"XwnLY9Tf7Zsef8gMGL2fhWA9ZmMjt4KPwg\" 0.1")
         );
 	// parse parameters
 	if (!EnsureWalletIsAvailable(fHelp))
@@ -915,6 +928,7 @@ UniValue crosschaininitial(const UniValue &params, bool fHelp)
 
 	// a random value is generated and sha256 hash algorithm is used.
 	unsigned char vch[32];
+	memset(vch, 0x00, sizeof(vch));
 	RandAddSeedPerfmon();
     GetRandBytes(vch, sizeof(vch));
 	uint256 secret = Hash(vch,vch+sizeof(vch));
@@ -1067,6 +1081,74 @@ UniValue crosschainredeem(const UniValue &params, bool fHelp)
 	CAmount preOutAmount = 0;
 	COutPoint preOutPoint;
 	uint256 preTxid = preTx.GetHash();
+	CTxOut preTxOut;
+	uint32_t preOutN =0;	
+	std::vector<valtype> vSolutions;
+	txnouttype addressType = TX_NONSTANDARD;
+	uint160 addrhash;
+
+	//get the previous tx ouput
+	BOOST_FOREACH(const CTxOut& txout, preTx.vout) 
+	{
+		const CScript scriptPubkey = StripClaimScriptPrefix(txout.scriptPubKey);
+		if (Solver(scriptPubkey, addressType, vSolutions))
+		{
+	        if(addressType== TX_SCRIPTHASH )
+	        {
+	            addrhash=uint160(vSolutions[0]);
+				preOutAmount =  txout.nValue;
+				CTxIn tmptxin = CTxIn(preTxid,preOutN,CScript());
+				tmptxin.prevPubKey = txout.scriptPubKey;
+				txNew.vin.push_back(tmptxin);
+				break;	
+	        }
+		}
+		preOutN++;
+	}
+	//check the previous tx output type
+	if(addressType !=TX_SCRIPTHASH)
+		{
+			return JSONRPCError(RPC_INVALID_PARAMS, "Error:the transaction have none P2SH type tx out");	
+		}
+
+	//check the contract is match transaction or not 
+	if ( 0 != strcmp(addrhash.ToString().c_str(),Hash160(vContract).ToString().c_str()) )
+	{
+		return JSONRPCError(RPC_INVALID_PARAMS, "Error:the contract in parameter can't match transaction in parameter");
+	}
+
+	//get the pubkey and key of participate address
+	const CKeyStore& keystore = *pwalletMain;
+	CKeyID keyID(participentAddressHash);
+	CPubKey pubKey;
+	CKey key;	
+	if(!keystore.GetPubKey(keyID,pubKey))
+		{
+			return JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Error:Can't find the pubkey of participte address");			
+		}
+	if(!keystore.GetKey(keyID,key))
+		{
+			return JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Error:Can't find the key of participte address");	
+		}
+
+    //get the out pubkey type p2pkh
+    CReserveKey reservekey(pwalletMain);
+    CPubKey newKey;
+	bool ret;
+	ret = reservekey.GetReservedKey(newKey);
+	assert(ret);
+    CBitcoinAddress outPutAddress(CTxDestination(newKey.GetID()));
+    if (!outPutAddress.IsValid())
+        return JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Error:Invalid Ulord address");
+
+	// Start building the lock script for the p2pkh type.
+	CScript paritipantP2PkHScript = GetScriptForDestination(CTxDestination(newKey.GetID()));
+	CAmount nAmount = preOutAmount- nFeePay;
+	CTxOut outNew(nAmount,paritipantP2PkHScript);
+	txNew.vout.push_back(outNew);
+
+	txNew.nLockTime = chainActive.Height();
+	txNew.nVersion = 1;
 
     return result;
 }
@@ -1112,6 +1194,11 @@ UniValue crosschainauditcontract(const UniValue &params, bool fHelp)
 	string str_contract = params[0].get_str();
 	std::vector<unsigned char>v_contract = ParseHex(str_contract);
 	CScript contract(v_contract.begin(),v_contract.end());
+	 //contract check
+	if(!contract.IsCrossChainPaymentScript())
+	{
+		return JSONRPCError(RPC_INVALID_PARAMS, "Error:the parameter is no stander contract");
+	}
 	CScriptID contractP2SH = CScriptID(contract);
 	CBitcoinAddress contract_address;
 	std::vector<std::string> vStr;

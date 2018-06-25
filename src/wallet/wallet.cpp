@@ -2817,7 +2817,22 @@ bool CWallet::GetMasternodeVinAndKeys(CTxIn& txinRet, CPubKey& pubKeyRet, CKey& 
     }
 
     if(strTxHash.empty()) // No output specified, select the first one
-        return GetVinAndKeysFromOutput(vPossibleCoins[0], txinRet, pubKeyRet, keyRet);
+    {
+    	BOOST_FOREACH(COutput& out, vPossibleCoins)
+    	{
+    		uint256 confTxHash;
+            int confoutid;
+    		BOOST_FOREACH(CMasternodeConfig::CMasternodeEntry mne, masternodeConfig.getEntries())
+    		{
+    			confTxHash.SetHex(mne.getTxHash());
+                confoutid = boost::lexical_cast<unsigned int>(mne.getOutputIndex());
+				if(out.tx->GetHash() == confTxHash && confoutid == out.i)
+					return GetVinAndKeysFromOutput(vPossibleCoins[0], txinRet, pubKeyRet, keyRet);
+    		}
+    	}
+		LogPrintf("CWallet::GetMasternodeVinAndKeys -- Could not locate the masternode configure vin, please check the masternode.conf\n");
+		return false;
+    }
 
     // Find specific vin
     uint256 txHash = uint256S(strTxHash);

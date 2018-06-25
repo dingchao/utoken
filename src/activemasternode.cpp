@@ -39,7 +39,7 @@ void CActiveMasternode::ManageState()
 	
 	char stroutput[1000];
 	int stroffset = 0;
-	stroffset = sprintf(stroutput, "ManageState :start vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
+	stroffset += sprintf(stroutput + stroffset, "ManageState :start vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
 	
     if(eType == MASTERNODE_REMOTE) {
         ManageStateRemote();
@@ -53,7 +53,7 @@ void CActiveMasternode::ManageState()
 #endif // ENABLE_WALLET
     }
 	stroffset += sprintf(stroutput + stroffset, "            :end vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
-	std::cout << stroffset << std::endl;
+	std::cout << stroutput << std::endl;
 
     SendMasternodePing();
 }

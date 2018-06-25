@@ -1903,29 +1903,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError("Failed to load masternode cache from mncache.dat");
     }
 
-	if(fMasterNode)
-    {
-        CMasternode * acmn = mnodeman.Find(activeMasternode.pubKeyMasternode);
-        if(NULL != acmn)
-        {
-            uint256 confTxHash;
-            int confoutid;
-            BOOST_FOREACH(CMasternodeConfig::CMasternodeEntry mne, masternodeConfig.getEntries())
-            {
-                confTxHash.SetHex(mne.getTxHash());
-                confoutid = boost::lexical_cast<unsigned int>(mne.getOutputIndex());
-                COutPoint outpoint = COutPoint(confTxHash, confoutid);
-                if(acmn->vin.prevout != outpoint)
-                {
-                    mnodeman.Clear();
-                    LogPrintf("MasterNode configure changed! Skip to loading masternode cashe....\n");
-                    printf("MasterNode configure changed! Skip to loading masternode cashe....\n");
-                    break;
-                }
-            }
-        }
-    }
-
     if(mnodeman.size()) {
         uiInterface.InitMessage(_("Loading masternode payment cache..."));
         CFlatDB<CMasternodePayments> flatdb2("mnpayments.dat", "magicMasternodePaymentsCache");

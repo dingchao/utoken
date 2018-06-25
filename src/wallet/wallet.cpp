@@ -2828,7 +2828,7 @@ bool CWallet::GetMasternodeVinAndKeys(CTxIn& txinRet, CPubKey& pubKeyRet, CKey& 
     			confTxHash.SetHex(mne.getTxHash());
                 confoutid = boost::lexical_cast<unsigned int>(mne.getOutputIndex());
 				if(out.tx->GetHash() == confTxHash && confoutid == out.i)
-					return GetVinAndKeysFromOutput(vPossibleCoins[0], txinRet, pubKeyRet, keyRet);
+					return GetVinAndKeysFromOutput(out, txinRet, pubKeyRet, keyRet);
     		}
     	}
 		LogPrintf("CWallet::GetMasternodeVinAndKeys -- Could not locate the masternode configure vin, please check the masternode.conf\n");

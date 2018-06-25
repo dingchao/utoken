@@ -37,16 +37,23 @@ void CActiveMasternode::ManageState()
         ManageStateInitial();
     }
 	
+	char stroutput[1000];
+	int stroffset = 0;
+	stroffset += sprintf(stroutput + stroffset, "ManageState :start vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
+	
     if(eType == MASTERNODE_REMOTE) {
         ManageStateRemote();
     } else if(eType == MASTERNODE_LOCAL) {
         // Try Remote Start first so the started local masternode can be restarted without recreate masternode broadcast.
         ManageStateRemote();
+		stroffset += sprintf(stroutput + stroffset, "            :mid vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
 #ifdef ENABLE_WALLET
         if(nState != ACTIVE_MASTERNODE_STARTED)
             ManageStateLocal();
 #endif // ENABLE_WALLET
     }
+	stroffset += sprintf(stroutput + stroffset, "            :end vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
+	std::cout << stroffset << std::endl;
 
     SendMasternodePing();
 }
@@ -132,10 +139,6 @@ bool CActiveMasternode::SendMasternodePing()
 void CActiveMasternode::ManageStateInitial()
 {
     LogPrint("masternode", "CActiveMasternode::ManageStateInitial -- status = %s, type = %s, pinger enabled = %d\n", GetStatus(), GetTypeString(), fPingerEnabled);
-
-	char stroutput[1000];
-	int outputoffset = 0;
-	outputoffset = sprintf(stroutput+outputoffset, "ManageStateInitial start:vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
 
     // Check that our local network configuration is correct
     if (!fListen) {
@@ -229,14 +232,12 @@ LogPrintf("GetLocal() = %c, IsValidNetAddr = %c \n", GetLocal(service, &pnode->a
     CPubKey pubKeyCollateral;
     CKey keyCollateral;
 
-	outputoffset += sprintf(stroutput+outputoffset, "ManageStateInitial last:vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
     // If collateral is found switch to LOCAL mode
     if(pwalletMain->GetMasternodeVinAndKeys(vin, pubKeyCollateral, keyCollateral)) {
         eType = MASTERNODE_LOCAL;
     }
 #endif // ENABLE_WALLET
-	outputoffset += sprintf(stroutput+outputoffset, "ManageStateInitial end:vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
-	std::cout << stroutput << std::endl;
+
     LogPrint("masternode", "CActiveMasternode::ManageStateInitial -- End status = %s, type = %s, pinger enabled = %d\n", GetStatus(), GetTypeString(), fPingerEnabled);
 }
 

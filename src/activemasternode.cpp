@@ -39,7 +39,7 @@ void CActiveMasternode::ManageState()
 	
 	char stroutput[1000];
 	int stroffset = 0;
-	stroffset += sprintf(stroutput + stroffset, "ManageState :start vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
+	stroffset = sprintf(stroutput, "ManageState :start vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
 	
     if(eType == MASTERNODE_REMOTE) {
         ManageStateRemote();

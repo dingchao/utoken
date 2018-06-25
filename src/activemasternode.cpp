@@ -33,12 +33,12 @@ void CActiveMasternode::ManageState()
 
     LogPrint("masternode", "CActiveMasternode::ManageState -- status = %s, type = %s, pinger enabled = %d\n", GetStatus(), GetTypeString(), fPingerEnabled);
 	char stroutput[1000];
-	sprintf(stroutput, "activeMasternode :before vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
+	sprintf(stroutput, "activeMasternode :before vin=%s\n", vin.ToString().c_str());
     if(eType == MASTERNODE_UNKNOWN) {
         ManageStateInitial();
     }
 	char strmidput[1000];
-	sprintf(strmidput, "                 :mid vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
+	sprintf(strmidput, "                 :mid vin=%s\n", vin.ToString().c_str());
     if(eType == MASTERNODE_REMOTE) {
         ManageStateRemote();
     } else if(eType == MASTERNODE_LOCAL) {
@@ -50,7 +50,7 @@ void CActiveMasternode::ManageState()
 #endif // ENABLE_WALLET
     }
 	char strhandle[1000];
-	sprintf(strhandle, "                 :after vin=%s, type = %s", vin.ToString().c_str(), GetTypeString().c_str());
+	sprintf(strhandle, "                 :after vin=%s", vin.ToString().c_str());
 	std::cout << stroutput << strmidput << strhandle << std::endl;
 
     SendMasternodePing();

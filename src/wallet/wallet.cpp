@@ -27,6 +27,7 @@
 #include "util.h"
 #include "utilmoneystr.h"
 
+#include "masternodeconfig.h"
 #include "privsend.h"
 #include "governance.h"
 #include "instantx.h"
@@ -2818,7 +2819,6 @@ bool CWallet::GetMasternodeVinAndKeys(CTxIn& txinRet, CPubKey& pubKeyRet, CKey& 
 
     if(strTxHash.empty()) // No output specified, select the first one
     {
-    	extern CMasternodeConfig masternodeConfig;
     	BOOST_FOREACH(COutput& out, vPossibleCoins)
     	{
     		uint256 confTxHash;

@@ -229,12 +229,13 @@ LogPrintf("GetLocal() = %c, IsValidNetAddr = %c \n", GetLocal(service, &pnode->a
     CPubKey pubKeyCollateral;
     CKey keyCollateral;
 
-	outputoffset = sprintf(stroutput+outputoffset, "ManageStateInitial last:vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
+	outputoffset += sprintf(stroutput+outputoffset, "ManageStateInitial last:vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
     // If collateral is found switch to LOCAL mode
     if(pwalletMain->GetMasternodeVinAndKeys(vin, pubKeyCollateral, keyCollateral)) {
         eType = MASTERNODE_LOCAL;
     }
 #endif // ENABLE_WALLET
+	outputoffset += sprintf(stroutput+outputoffset, "ManageStateInitial end:vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
 	std::cout << stroutput << std::endl;
     LogPrint("masternode", "CActiveMasternode::ManageStateInitial -- End status = %s, type = %s, pinger enabled = %d\n", GetStatus(), GetTypeString(), fPingerEnabled);
 }

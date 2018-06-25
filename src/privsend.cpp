@@ -1860,7 +1860,7 @@ bool CPrivSendPool::MakeCollateralAmounts(const CompactTallyItem& tallyItem)
 
     return true;
 }
-/*test for change github*/
+
 // Create denominations by looping through inputs grouped by addresses
 bool CPrivSendPool::CreateDenominated()
 {

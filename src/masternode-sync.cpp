@@ -89,7 +89,6 @@ bool CMasternodeSync::IsBlockchainSynced(bool fBlockAccepted)
         // skip if we already checked less than 1 tick ago
         if(GetTime() - nTimeLastProcess < MASTERNODE_SYNC_TICK_SECONDS) {
             nSkipped++;
-			LogPrintf("CMasternodeSync::IsBlockchainSynced -- less than MASTERNODE_SYNC_TICK_SECONDS,return %s\n", fBlockchainSynced ? "true" :"false");
             return fBlockchainSynced;
         }
     }

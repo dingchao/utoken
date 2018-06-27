@@ -4522,6 +4522,7 @@ bool static LoadBlockIndexDB()
 
     // Calculate nChainWork
     vector<pair<int, CBlockIndex*> > vSortedByHeight;
+	LogPrintf("LoadBlockIndexDB: mapBlockIndex.size = %d\n", mapBlockIndex.size());
     vSortedByHeight.reserve(mapBlockIndex.size());
     BOOST_FOREACH(const PAIRTYPE(uint256, CBlockIndex*)& item, mapBlockIndex)
     {

@@ -419,7 +419,7 @@ void CMasternodeMan::CheckAndRemove()
             CMasternodeBroadcast mnb = CMasternodeBroadcast(*it);
             uint256 hash = mnb.GetHash();
             // If collateral was spent ...
-            if ((*it).IsOutpointSpent() || (*it).IsRegistered()) {
+            if ((*it).IsOutpointSpent() || (*it).IsRegistered() || (*it).IsLocalcomflict()) {
                 LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Removing Masternode: %s  addr=%s  %i now\n", (*it).GetStateString(), (*it).addr.ToString(), size() - 1);
 
                 // erase all of the broadcasts we've seen from this txin, ...

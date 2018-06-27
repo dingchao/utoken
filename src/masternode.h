@@ -273,6 +273,7 @@ public:
     bool IsWatchdogExpired() { return nActiveState == MASTERNODE_WATCHDOG_EXPIRED; }
     bool IsNewStartRequired() { return nActiveState == MASTERNODE_NEW_START_REQUIRED; }
 	bool IsRegistered() { return nActiveState == MASTERNODE_NO_REGISTERED; }
+	bool IsLocalcomflict();
 
 	void SetRegisteredCheckInterval(int time) { MNM_REGISTERED_CHECK_SECONDS = time * 60; }
 

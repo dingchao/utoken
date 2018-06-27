@@ -315,6 +315,11 @@ void CMasternode::Check(bool fForce)
     }
 }
 
+bool CMasternode::IsLocalcomflict()
+{
+	return fMasterNode && activeMasternode.pubKeyMasternode == pubKeyMasternode ? activeMasternode.vin != vin : false;
+}
+
 bool CMasternode::IsValidNetAddr()
 {
     return IsValidNetAddr(addr);

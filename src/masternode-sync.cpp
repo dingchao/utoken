@@ -69,6 +69,7 @@ bool CMasternodeSync::IsBlockchainSynced(bool fBlockAccepted)
     // if the last call to this function was more than 60 minutes ago (client was in sleep mode) reset the sync process
     if(GetTime() - nTimeLastProcess > 60*60) {
         Reset();
+		LogPrintf("CMasternodeSync::IsBlockchainSynced -- set fBlockchainSynced false\n");
         fBlockchainSynced = false;
     }
 
@@ -88,11 +89,12 @@ bool CMasternodeSync::IsBlockchainSynced(bool fBlockAccepted)
         // skip if we already checked less than 1 tick ago
         if(GetTime() - nTimeLastProcess < MASTERNODE_SYNC_TICK_SECONDS) {
             nSkipped++;
+			LogPrintf("CMasternodeSync::IsBlockchainSynced -- less than MASTERNODE_SYNC_TICK_SECONDS,return %s\n", fBlockchainSynced ? "true" :"false");
             return fBlockchainSynced;
         }
     }
 
-    if(fDebug) LogPrintf("CMasternodeSync::IsBlockchainSynced -- state before check: %ssynced, skipped %d times\n", fBlockchainSynced ? "" : "not ", nSkipped);
+    if(fDebug) LogPrintf("CMasternodeSync::IsBlockchainSynced -- state before check: %ssynced, skipped %d times, fFirstBlockAccepted=%s\n", fBlockchainSynced ? "" : "not ", nSkipped, fFirstBlockAccepted?"true":"false");
 
     nTimeLastProcess = GetTime();
     nSkipped = 0;
@@ -134,9 +136,14 @@ bool CMasternodeSync::IsBlockchainSynced(bool fBlockAccepted)
     if(!fFirstBlockAccepted) return false;
 
     // same as !IsInitialBlockDownload() but no cs_main needed here
+    int64_t nnowtmp = GetTime();
     int64_t nMaxBlockTime = std::max(pCurrentBlockIndex->GetBlockTime(), pindexBestHeader->GetBlockTime());
     fBlockchainSynced = pindexBestHeader->nHeight - pCurrentBlockIndex->nHeight < 24 * 6 &&
-                        GetTime() - nMaxBlockTime < Params().MaxTipAge();
+                        nnowtmp - nMaxBlockTime < Params().MaxTipAge();
+	LogPrintf("CMasternodeSync::IsBlockchainSynced -- return %s= ((%d-%d)<144) && ((%d - %d)-%d )\n",
+				fBlockchainSynced ? "true" : "false",
+				pindexBestHeader->nHeight, pCurrentBlockIndex->nHeight,
+				nnowtmp, nMaxBlockTime, Params().MaxTipAge());
 
     return fBlockchainSynced;
 }

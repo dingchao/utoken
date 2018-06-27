@@ -139,7 +139,7 @@ bool CMasternodeSync::IsBlockchainSynced(bool fBlockAccepted)
     int64_t nMaxBlockTime = std::max(pCurrentBlockIndex->GetBlockTime(), pindexBestHeader->GetBlockTime());
     fBlockchainSynced = pindexBestHeader->nHeight - pCurrentBlockIndex->nHeight < 24 * 6 &&
                         nnowtmp - nMaxBlockTime < Params().MaxTipAge();
-	LogPrintf("CMasternodeSync::IsBlockchainSynced -- return %s= ((%d-%d)<144) && ((%d - %d)-%d )\n",
+	LogPrintf("CMasternodeSync::IsBlockchainSynced -- return %s= ((%d-%d)<144) && ((%d - %d)<%d )\n",
 				fBlockchainSynced ? "true" : "false",
 				pindexBestHeader->nHeight, pCurrentBlockIndex->nHeight,
 				nnowtmp, nMaxBlockTime, Params().MaxTipAge());

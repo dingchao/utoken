@@ -337,10 +337,6 @@ bool CMasternodeMan::Add(CMasternode &mn)
             fMasternodesAdded = true;
             return true;
         }*/
-        if(fMasterNode && mn.pubKeyMasternode == activeMasternode.pubKeyMasternode)
-        {
-        	printf("add active.vin = %s, addmn.vin= %s\n", activeMasternode.vin.ToString().c_str(), mn.vin.ToString().c_str());
-        }
         vMasternodes.push_back(mn);
         indexMasternodes.AddMasternodeVIN(mn.vin);
         fMasternodesAdded = true;

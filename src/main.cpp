@@ -3789,10 +3789,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
     pindexNew->RaiseValidity(BLOCK_VALID_TREE);
     if (pindexBestHeader == NULL || pindexBestHeader->nChainWork < pindexNew->nChainWork)
-    {
         pindexBestHeader = pindexNew;
-		LogPrintf("AddToBlockIndex: update pindexBestHeader height = %d\n", pindexBestHeader ? pindexBestHeader->nHeight : -1);
-    }
 
     setDirtyBlockIndex.insert(pindexNew);
 
@@ -4522,7 +4519,6 @@ bool static LoadBlockIndexDB()
 
     // Calculate nChainWork
     vector<pair<int, CBlockIndex*> > vSortedByHeight;
-	LogPrintf("LoadBlockIndexDB: mapBlockIndex.size = %d\n", mapBlockIndex.size());
     vSortedByHeight.reserve(mapBlockIndex.size());
     BOOST_FOREACH(const PAIRTYPE(uint256, CBlockIndex*)& item, mapBlockIndex)
     {
@@ -4555,10 +4551,7 @@ bool static LoadBlockIndexDB()
         if (pindex->pprev)
             pindex->BuildSkip();
         if (pindex->IsValid(BLOCK_VALID_TREE) && (pindexBestHeader == NULL || CBlockIndexWorkComparator()(pindexBestHeader, pindex)))
-        {
             pindexBestHeader = pindex;
-			LogPrintf("LoadBlockIndexDB: load pindexBestHeader height = %d\n", pindexBestHeader ? pindexBestHeader->nHeight : -1);
-        }
     }
 
     // Load block file info
@@ -6882,10 +6875,7 @@ bool SendMessages(CNode* pto)
 
         // Start block sync
         if (pindexBestHeader == NULL)
-        {
             pindexBestHeader = chainActive.Tip();
-			LogPrintf("SendMessages: sync pindexBestHeader height = %d\n", pindexBestHeader ? pindexBestHeader->nHeight : -1);
-        }
         bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
         if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex) {
             // Only actively request headers from a single peer, unless we're close to end of initial download.

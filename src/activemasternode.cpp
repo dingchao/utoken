@@ -37,23 +37,16 @@ void CActiveMasternode::ManageState()
         ManageStateInitial();
     }
 
-	char stroutput[1000];
-	int stroffset = 0;
-	stroffset += sprintf(stroutput + stroffset, "ManageState :start vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
-
     if(eType == MASTERNODE_REMOTE) {
         ManageStateRemote();
     } else if(eType == MASTERNODE_LOCAL) {
         // Try Remote Start first so the started local masternode can be restarted without recreate masternode broadcast.
         ManageStateRemote();
-		stroffset += sprintf(stroutput + stroffset, "            :mid vin=%s, type = %s\n", vin.ToString().c_str(), GetTypeString().c_str());
 #ifdef ENABLE_WALLET
         if(nState != ACTIVE_MASTERNODE_STARTED)
             ManageStateLocal();
 #endif // ENABLE_WALLET
     }
-	stroffset += sprintf(stroutput + stroffset, "            :end vin=%s, type = %s", vin.ToString().c_str(), GetTypeString().c_str());
-	std::cout << stroutput << std::endl;
 
     SendMasternodePing();
 }

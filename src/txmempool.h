@@ -496,6 +496,12 @@ public:
     void ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta) const;
     void ClearPrioritisation(const uint256 hash);
 
+    void EnableFeeCalc(double value)
+    {
+        blockSinceLastRollingFeeBump = true;
+        rollingMinimumFeeRate = value;
+    }
+
 public:
     /** Remove a set of transactions from the mempool.
      *  If a transaction is in this set, then all in-mempool descendants must

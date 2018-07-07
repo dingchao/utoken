@@ -3600,8 +3600,8 @@ void ThreadTestFillMemPool()
 		{
 			std::vector<COutput> vCoins;
 			pwalletMain->AvailableCoins(vCoins);
-			if(vCoins.empty())
-				continue;
+			
+			LogPrint("fillmempool", "ThreadTestFillMemPool : %ld coins to spent \n", vCoins.size());
 			
 			BOOST_FOREACH(const COutput& out, vCoins)
 			{

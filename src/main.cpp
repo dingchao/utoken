@@ -3380,16 +3380,16 @@ bool sendrawtx(CMutableTransaction & rawTx)
         bool fMissingInputs;
         if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, false, !fOverrideFees)) {
             if (state.IsInvalid()) {
-                return error("sendrawtx: TRANSACTION %s REJECTED %i: %s\n",hashTx.GetHex(), state.GetRejectCode(), state.GetRejectReason());
+                return error("sendrawtx: TRANSACTION REJECTED %i: %s\n%s\n", state.GetRejectCode(), state.GetRejectReason(), EncodeHexTx(tx));
             } else {
                 if (fMissingInputs) {
-                    return error("sendrawtx: TRANSACTION %s ERROR Missing inputs\n", hashTx.GetHex());
+                    return error("sendrawtx: TRANSACTION ERROR Missing inputs\n%s\n", EncodeHexTx(tx));
                 }
-                return error("sendrawtx: TRANSACTION %s ERROR %s\n",hashTx.GetHex(), state.GetRejectReason());
+                return error("sendrawtx: TRANSACTION ERROR %s\n%s\n", state.GetRejectReason(), EncodeHexTx(tx));
             }
         }
     } else if (fHaveChain) {
-        return error("sendrawtx: transaction %s already in block chain\n", hashTx.GetHex());
+        return error("sendrawtx: transaction already in block chain\n%s\n", hashTx.GetHex());
     }
 
     RelayTransaction(tx);

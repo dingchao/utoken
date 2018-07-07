@@ -3479,7 +3479,7 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 		if(inValue > 1000 * COIN)
 			noutAmount = inValue/1000;
 		else if(inValue > 1 * COIN)
-			noutAmount = 1;
+			noutAmount = 1 * COIN;
 		else if(inValue == 1 * COIN)
 			noutAmount = inValue/10;
 		else

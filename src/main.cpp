@@ -3476,11 +3476,11 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 	CAmount fee = mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(100);
 	if(idlePoolSize >= 36000)
 	{
-		if(inValue > 1000*COIN)
+		if(inValue > 1000)
 			noutAmount = inValue/1000;
-		else if(inValue > 1*COIN)
+		else if(inValue > 1)
 			noutAmount = 1;
-		else if(inValue == 1*COIN)
+		else if(inValue == 1)
 			noutAmount = inValue/10;
 		else
 			noutAmount = inValue - fee;

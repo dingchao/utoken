@@ -1279,7 +1279,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool min fee not met", false, strprintf("%d < %d", nFees, mempoolRejectFee));
         } else if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nModifiedFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(entry.GetPriority(chainActive.Height() + 1))) {
             // Require that free transactions have sufficient priority to be mined in the next block.
-            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, strprintf("insufficient priority(%ld < %ld)",nModifiedFees,::minRelayTxFee.GetFee(nSize)));
         }
 
         // Continuously rate-limit free (really, very-low-fee) transactions
@@ -3473,7 +3473,9 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 	CAmount inValue = out.tx->vout[out.i].nValue;
 	int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
 	CAmount noutAmount = 0;
-	CAmount fee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(100), (CAmount)1);
+	CAmount fee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(300), (CAmount)1);
+	if(fee < mempool.estimateFee(1).GetFee(300));
+		fee = mempool.estimateFee(1).GetFee(300);
 	if(idlePoolSize >= 36000)
 	{
 		if(inValue > 1000 * COIN)
@@ -3507,6 +3509,10 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 		
 		if(outValue + noutAmount >= inValue)
 		{
+			CAmount minfee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(rawTx.GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)),
+										mempool.estimateFee(1).GetFee(rawTx.GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)));
+			if(fee < minfee)
+				fee = minfee;
 			CAmount amount = inValue - outValue - fee;
 			if(amount > 0)
 			{

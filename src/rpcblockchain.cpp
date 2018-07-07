@@ -949,7 +949,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
     return res;
 }
 
-UniValue mempoolInfoToJSON()
+UniValue mempoolInfoToJSON(size_t nSize)
 {
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("size", (int64_t) mempool.size()));
@@ -957,14 +957,15 @@ UniValue mempoolInfoToJSON()
     ret.push_back(Pair("usage", (int64_t) mempool.DynamicMemoryUsage()));
     size_t maxmempool = GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
     ret.push_back(Pair("maxmempool", (int64_t) maxmempool));
-    ret.push_back(Pair("mempoolminfee", ValueFromAmount(mempool.GetMinFee(maxmempool).GetFeePerK())));
+    ret.push_back(Pair("mempoolminfee", ValueFromAmount(mempool.GetMinFee(maxmempool).GetFee(nSize))));
+	ret.push_back(Pair("relaypriority", ValueFromAmount(CFeeRate(DEFAULT_MIN_RELAY_TX_FEE).GetFee(nSize))));
 
     return ret;
 }
 
 UniValue getmempoolinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp || params.size() != 1)
         throw runtime_error(
             "getmempoolinfo\n"
             "\nReturns details on the active state of the TX memory pool.\n"
@@ -981,7 +982,9 @@ UniValue getmempoolinfo(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getmempoolinfo", "")
         );
 
-    return mempoolInfoToJSON();
+	int64_t	size = (unsigned int)params[0].get_int64();
+
+    return mempoolInfoToJSON((size_t)size);
 }
 
 UniValue invalidateblock(const UniValue& params, bool fHelp)

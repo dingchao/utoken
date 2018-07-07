@@ -47,6 +47,8 @@
 #include "masternode-sync.h"
 #include "masternodeman.h"
 
+#include "script/sign.h"
+
 #include <sstream>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -3382,7 +3384,9 @@ bool GetAddressList(std::vector<string> & addrList)
 			        kpSize = 1000 - i;
 			    }
 
-			    EnsureWalletIsUnlocked();
+			    if (pwalletMain->IsLocked())
+					return error("GetAddressList: wallet is locked.\n");
+				
 			    pwalletMain->TopUpKeyPool(kpSize);
 
 			    if (pwalletMain->GetKeyPoolSize() < kpSize)
@@ -3411,7 +3415,6 @@ bool sendrawtx(CMutableTransaction & rawTx)
     uint256 hashTx = tx.GetHash();
 
     bool fOverrideFees = false;
-    bool fInstantSend = false;
 
     CCoinsViewCache &view = *pcoinsTip;
     const CCoins* existingCoins = view.AccessCoins(hashTx);
@@ -3443,7 +3446,7 @@ bool sendrawtx(CMutableTransaction & rawTx)
 }
 
 
-bool signrawTX(CMutableTransaction & mergedTx, const CBasicKeyStore & keystore)
+bool signrawTX(CMutableTransaction & mergedTx, const CBasicKeyStore & basickeystore)
 {
 	LOCK(cs_main);
 
@@ -3465,9 +3468,9 @@ bool signrawTX(CMutableTransaction & mergedTx, const CBasicKeyStore & keystore)
         view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
     }
 
-    bool fGivenKeys = false;
+    //bool fGivenKeys = false;
 
-    const CKeyStore& keystore = keystore;
+    const CKeyStore& keystore = basickeystore;
 
     int nHashType = SIGHASH_ALL;
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
@@ -3582,7 +3585,7 @@ void ThreadTestFillMemPool()
 	std::vector<string> addrList;
 	if(!GetAddressList(addrList))
 	{
-		printf("ThreadTestFillMemPool start failed, addrlist number is %d\n", addrList.size());
+		printf("ThreadTestFillMemPool start failed, addrlist number is %u\n", addrList.size());
 		return;
 	}
 

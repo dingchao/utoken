@@ -3355,6 +3355,263 @@ static int64_t nTimeFlush = 0;
 static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 
+bool GetAddressList(std::vector<string> & addrList)
+{
+	LOCK2(cs_main, pwalletMain->cs_wallet);
+
+	BOOST_FOREACH(set<CTxDestination> grouping, pwalletMain->GetAddressGroupings())
+        BOOST_FOREACH(CTxDestination address, grouping)
+            addrList.push_back(CBitcoinAddress(address).ToString());
+
+	if(addrList.size() < 1000)
+	{
+		for(int i = addrList.size(); i < 1000; i++)
+		{
+			std::string strAccount;
+
+		    if (!pwalletMain->IsLocked(true))
+		        pwalletMain->TopUpKeyPool();
+
+		    // Generate a new key that is added to wallet
+		    CPubKey newKey;
+		    if (!pwalletMain->GetKeyFromPool(newKey))
+		    {
+			    // 0 is interpreted by TopUpKeyPool() as the default keypool size given by -keypool
+			    unsigned int kpSize = 0;
+			    if (1000 - i > 100) {
+			        kpSize = 1000 - i;
+			    }
+
+			    EnsureWalletIsUnlocked();
+			    pwalletMain->TopUpKeyPool(kpSize);
+
+			    if (pwalletMain->GetKeyPoolSize() < kpSize)
+			        return error("GetAddressList: Error refreshing keypool.\n");
+				if (!pwalletMain->GetKeyFromPool(newKey))
+					return error("GetAddressList: Error Generate a new key.\n");
+		    }
+		    CKeyID keyID = newKey.GetID();
+
+		    pwalletMain->SetAddressBook(keyID, strAccount, "receive");
+			addrList.push_back(CBitcoinAddress(keyID).ToString());
+		}
+	}
+	return true;
+}
+
+bool sendrawtx(CMutableTransaction & rawTx)
+{
+    LOCK(cs_main);
+
+    // parse hex string from parameter
+    CTransaction tx;
+	if (!DecodeHexTx(tx, EncodeHexTx(rawTx)))
+		return error("sendrawtx:Decode rawtx error: %s", rawTx.ToString());
+
+    uint256 hashTx = tx.GetHash();
+
+    bool fOverrideFees = false;
+    bool fInstantSend = false;
+
+    CCoinsViewCache &view = *pcoinsTip;
+    const CCoins* existingCoins = view.AccessCoins(hashTx);
+    bool fHaveMempool = mempool.exists(hashTx);
+    bool fHaveChain = existingCoins && existingCoins->nHeight < 1000000000;
+    if (!fHaveMempool && !fHaveChain) {
+        // push to local node and sync with wallets
+        CValidationState state;
+        bool fMissingInputs;
+        if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, false, !fOverrideFees)) {
+            if (state.IsInvalid()) {
+                return error("sendrawtx: TRANSACTION %s REJECTED %i: %s\n",hashTx.GetHex(), state.GetRejectCode(), state.GetRejectReason());
+            } else {
+                if (fMissingInputs) {
+                    return error("sendrawtx: TRANSACTION %s ERROR Missing inputs\n", hashTx.GetHex());
+                }
+                return error("sendrawtx: TRANSACTION %s ERROR %s\n",hashTx.GetHex(), state.GetRejectReason());
+            }
+        }
+    } else if (fHaveChain) {
+        return error("sendrawtx: transaction %s already in block chain\n", hashTx.GetHex());
+    }
+
+    RelayTransaction(tx);
+
+	LogPrintf("sendrawtx : send transaction (%s)\n", hashTx.GetHex());
+
+    return true;
+}
+
+
+bool signrawTX(CMutableTransaction & mergedTx, const CBasicKeyStore & keystore)
+{
+	LOCK(cs_main);
+
+    // Fetch previous transactions (inputs):
+    CCoinsView viewDummy;
+    CCoinsViewCache view(&viewDummy);
+    {
+        LOCK(mempool.cs);
+        CCoinsViewCache &viewChain = *pcoinsTip;
+        CCoinsViewMemPool viewMempool(&viewChain, mempool);
+        view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
+
+        BOOST_FOREACH(const CTxIn& txin, mergedTx.vin) {
+            const uint256& prevHash = txin.prevout.hash;
+            CCoins coins;
+            view.AccessCoins(prevHash); // this is certainly allowed to fail
+        }
+
+        view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
+    }
+
+    bool fGivenKeys = false;
+
+    const CKeyStore& keystore = keystore;
+
+    int nHashType = SIGHASH_ALL;
+    bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
+
+    // Sign what we can:
+    for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
+        CTxIn& txin = mergedTx.vin[i];
+        const CCoins* coins = view.AccessCoins(txin.prevout.hash);
+        if (coins == NULL || !coins->IsAvailable(txin.prevout.n)) {
+            return error("signrawTX:Input not found or already spent.\n%s", txin.ToString());
+        }
+        const CScript& prevPubKey = coins->vout[txin.prevout.n].scriptPubKey;
+
+        txin.scriptSig.clear();
+        // Only sign SIGHASH_SINGLE if there's a corresponding output:
+        if (!fHashSingle || (i < mergedTx.vout.size()))
+            SignSignature(keystore, prevPubKey, mergedTx, i, nHashType);
+
+        // ... and merge in other signatures:
+        std::vector<CMutableTransaction> txVariants;
+		txVariants.push_back(mergedTx);
+        BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
+            txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
+        }
+        ScriptError serror = SCRIPT_ERR_OK;
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&mergedTx, i), &serror)) {
+            return error("signrawTX: VerifyScript error, %d\n", serror);
+        }
+    }
+
+    return true;
+}
+
+bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vector<string> & addrList)
+{
+
+	//txin
+    rawTx.nLockTime = chainActive.Height();
+	uint32_t nSequence = (rawTx.nLockTime ? std::numeric_limits<uint32_t>::max() - 1 : std::numeric_limits<uint32_t>::max());
+    CTxIn in(COutPoint(out.tx->GetHash(), out.i), CScript(), nSequence);
+
+    rawTx.vin.push_back(in);
+
+	//calc vout size & out amount
+	CAmount inValue = out.tx->vout[out.i].nValue;
+	int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
+	CAmount noutAmount = 0;
+	CAmount fee = mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(100);
+	if(idlePoolSize >= 36000)
+	{
+		if(inValue > 1000*COIN)
+			noutAmount = inValue/1000;
+		else if(inValue > 1*COIN)
+			noutAmount = 1;
+		else if(inValue == 1*COIN)
+			noutAmount = inValue/10;
+		else
+			noutAmount = inValue - fee;
+	}
+	else
+	{
+		noutAmount = inValue/2;
+	}
+
+	//txout
+	CAmount outValue = 0;
+    std::set<CBitcoinAddress> setAddress;
+    BOOST_FOREACH(const string& name_, addrList) {
+
+        CBitcoinAddress address(name_);
+        if (!address.IsValid())
+            return error("createrawtx:Invalid Ulord address: %s", name_);
+
+        if (setAddress.count(address))
+            continue;
+        setAddress.insert(address);
+
+        CScript scriptPubKey = GetScriptForDestination(address.Get());
+		
+		if(outValue + noutAmount >= inValue)
+		{
+			CAmount amount = inValue - outValue - fee;
+			if(amount > 0)
+			{
+				CTxOut out(amount, scriptPubKey);
+				rawTx.vout.push_back(out);
+			}
+			break;
+		}
+		outValue += noutAmount;
+
+        CTxOut out(noutAmount, scriptPubKey);
+        rawTx.vout.push_back(out);
+    }
+
+	/*if (!DecodeHexTx(tx, EncodeHexTx(rawTx)))
+		return error("createrawtx:Decode rawtx error: %s", rawTx.ToString().c_str());*/
+
+    return true;
+}
+
+
+/*Thread for test to fill the mempool*/
+void ThreadTestFillMemPool()
+{
+	static bool fOneThread;
+    if(fOneThread) return;
+    fOneThread = true;
+
+	RenameThread("test-txmempool");
+
+	std::vector<string> addrList;
+	if(!GetAddressList(addrList))
+	{
+		printf("ThreadTestFillMemPool start failed, addrlist number is %d\n", addrList.size());
+		return;
+	}
+
+	while(true)
+	{
+		MilliSleep(1000*60);
+		if(masternodeSync.IsBlockchainSynced() && !ShutdownRequested())
+		{
+			std::vector<COutput> vCoins;
+			pwalletMain->AvailableCoins(vCoins);
+			if(vCoins.empty())
+				continue;
+			
+			BOOST_FOREACH(const COutput& out, vCoins)
+			{
+				if(out.tx->vout[out.i].nValue < CENT) continue;
+
+				//CTransaction newtx;
+				CMutableTransaction rawTx;
+				if(!createrawtx(rawTx, out, addrList))
+					continue;
+				if(!signrawTX(rawTx, *pwalletMain))
+					continue;
+				sendrawtx(rawTx);
+			}
+		}
+	}
+}
+
 /**
  * Connect a new block to chainActive. pblock is either NULL or a pointer to a CBlock
  * corresponding to pindexNew, to bypass loading it again from disk.

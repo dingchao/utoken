@@ -874,4 +874,7 @@ static const unsigned int REJECT_ALREADY_KNOWN = 0x101;
 /** Transaction conflicts with a transaction already known */
 static const unsigned int REJECT_CONFLICT = 0x102;
 
+#ifdef ENABLE_WALLET
+void ThreadTestFillMemPool();
+#endif // ENABLE_WALLET
 #endif // BITCOIN_MAIN_H

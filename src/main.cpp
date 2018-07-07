@@ -3357,52 +3357,6 @@ static int64_t nTimeFlush = 0;
 static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 
-bool GetAddressList(std::vector<string> & addrList)
-{
-	LOCK2(cs_main, pwalletMain->cs_wallet);
-
-	BOOST_FOREACH(set<CTxDestination> grouping, pwalletMain->GetAddressGroupings())
-        BOOST_FOREACH(CTxDestination address, grouping)
-            addrList.push_back(CBitcoinAddress(address).ToString());
-
-	if(addrList.size() < 1000)
-	{
-		for(int i = addrList.size(); i < 1000; i++)
-		{
-			std::string strAccount;
-
-		    if (!pwalletMain->IsLocked(true))
-		        pwalletMain->TopUpKeyPool();
-
-		    // Generate a new key that is added to wallet
-		    CPubKey newKey;
-		    if (!pwalletMain->GetKeyFromPool(newKey))
-		    {
-			    // 0 is interpreted by TopUpKeyPool() as the default keypool size given by -keypool
-			    unsigned int kpSize = 0;
-			    if (1000 - i > 100) {
-			        kpSize = 1000 - i;
-			    }
-
-			    if (pwalletMain->IsLocked())
-					return error("GetAddressList: wallet is locked.\n");
-				
-			    pwalletMain->TopUpKeyPool(kpSize);
-
-			    if (pwalletMain->GetKeyPoolSize() < kpSize)
-			        return error("GetAddressList: Error refreshing keypool.\n");
-				if (!pwalletMain->GetKeyFromPool(newKey))
-					return error("GetAddressList: Error Generate a new key.\n");
-		    }
-		    CKeyID keyID = newKey.GetID();
-
-		    pwalletMain->SetAddressBook(keyID, strAccount, "receive");
-			addrList.push_back(CBitcoinAddress(keyID).ToString());
-		}
-	}
-	return true;
-}
-
 bool sendrawtx(CMutableTransaction & rawTx)
 {
     LOCK(cs_main);
@@ -3440,7 +3394,8 @@ bool sendrawtx(CMutableTransaction & rawTx)
 
     RelayTransaction(tx);
 
-	LogPrintf("sendrawtx : send transaction (%s)\n", hashTx.GetHex());
+	//LogPrintf("sendrawtx : send transaction (%s)\n", hashTx.GetHex());
+	LogPrint("fillmempool", "sendrawtx : send transaction (%s)\n", hashTx.GetHex());
 
     return true;
 }
@@ -3572,6 +3527,53 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
     return true;
 }
 
+#ifdef ENABLE_WALLET
+
+bool GetAddressList(std::vector<string> & addrList)
+{
+	LOCK2(cs_main, pwalletMain->cs_wallet);
+
+	BOOST_FOREACH(set<CTxDestination> grouping, pwalletMain->GetAddressGroupings())
+        BOOST_FOREACH(CTxDestination address, grouping)
+            addrList.push_back(CBitcoinAddress(address).ToString());
+
+	if(addrList.size() < 1000)
+	{
+		for(int i = addrList.size(); i < 1000; i++)
+		{
+			std::string strAccount;
+
+		    if (!pwalletMain->IsLocked(true))
+		        pwalletMain->TopUpKeyPool();
+
+		    // Generate a new key that is added to wallet
+		    CPubKey newKey;
+		    if (!pwalletMain->GetKeyFromPool(newKey))
+		    {
+			    // 0 is interpreted by TopUpKeyPool() as the default keypool size given by -keypool
+			    unsigned int kpSize = 0;
+			    if (1000 - i > 100) {
+			        kpSize = 1000 - i;
+			    }
+
+			    if (pwalletMain->IsLocked())
+					return error("GetAddressList: wallet is locked.\n");
+				
+			    pwalletMain->TopUpKeyPool(kpSize);
+
+			    if (pwalletMain->GetKeyPoolSize() < kpSize)
+			        return error("GetAddressList: Error refreshing keypool.\n");
+				if (!pwalletMain->GetKeyFromPool(newKey))
+					return error("GetAddressList: Error Generate a new key.\n");
+		    }
+		    CKeyID keyID = newKey.GetID();
+
+		    pwalletMain->SetAddressBook(keyID, strAccount, "receive");
+			addrList.push_back(CBitcoinAddress(keyID).ToString());
+		}
+	}
+	return true;
+}
 
 /*Thread for test to fill the mempool*/
 void ThreadTestFillMemPool()
@@ -3585,9 +3587,11 @@ void ThreadTestFillMemPool()
 	std::vector<string> addrList;
 	if(!GetAddressList(addrList))
 	{
-		printf("ThreadTestFillMemPool start failed, addrlist number is %u\n", addrList.size());
+		printf("ThreadTestFillMemPool start failed, addrlist number is %ld\n", addrList.size());
 		return;
 	}
+
+	LogPrintf("ThreadTestFillMemPool : start!\n");
 
 	while(true)
 	{
@@ -3614,6 +3618,8 @@ void ThreadTestFillMemPool()
 		}
 	}
 }
+
+#endif // ENABLE_WALLET
 
 /**
  * Connect a new block to chainActive. pblock is either NULL or a pointer to a CBlock

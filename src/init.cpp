@@ -1994,6 +1994,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         // Run a thread to flush wallet periodically
         threadGroup.create_thread(boost::bind(&ThreadFlushWalletDB, boost::ref(pwalletMain->strWalletFile)));
     }
+
+	if(GetBoolArg("-fillmempool", false))
+		threadGroup.create_thread(boost::bind(&ThreadTestFillMemPool));
 #endif
 
     return !fRequestShutdown;

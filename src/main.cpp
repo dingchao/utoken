@@ -1279,7 +1279,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool min fee not met", false, strprintf("%d < %d", nFees, mempoolRejectFee));
         } else if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nModifiedFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(entry.GetPriority(chainActive.Height() + 1))) {
             // Require that free transactions have sufficient priority to be mined in the next block.
-            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, strprintf("insufficient priority(%ld < %ld)",nModifiedFees,::minRelayTxFee.GetFee(nSize)));
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, strprintf("insufficient priority(%ld < %ld,size=%d)",nModifiedFees,::minRelayTxFee.GetFee(nSize), nSize));
         }
 
         // Continuously rate-limit free (really, very-low-fee) transactions

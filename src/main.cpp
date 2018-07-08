@@ -3481,7 +3481,7 @@ int32_t gettotalout(CAmount inValue)
 		if(inValue > COIN)
 			return std::min(inValue / COIN, outtotal);
 		else if(inValue == COIN)
-			return std::min(10, outtotal);
+			return 10 <= outtotal ? 10 : outtotal;
 		else if(inValue >= 0.01 * COIN)
 			return 2;
 		else

@@ -3476,7 +3476,7 @@ int32_t gettotalout(CAmount inValue)
 		else
 			return 1;
 	}
-	esle if(outtotal > 1)
+	else if(outtotal > 1)
 	{
 		if(inValue > COIN)
 			return std::min(inValue / COIN, outtotal);
@@ -3505,7 +3505,7 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 
 	//calc vout size & out amount
 	CAmount inValue = out.tx->vout[out.i].nValue;
-	int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
+	//int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
 	//int64_t outtotal = (int64_t)((idlePoolSize - 300)/30);
 	int32_t outcount = gettotalout(inValue);
 	size_t offset = (size_t)(outcount * 30);

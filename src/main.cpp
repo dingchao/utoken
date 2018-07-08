@@ -3459,10 +3459,11 @@ bool signrawTX(CMutableTransaction & mergedTx, const CBasicKeyStore & basickeyst
     return true;
 }
 
-int32_t gettotalout(CAmount inValue)
+int32_t gettotalout(CAmount inValue, size_t & nsize)
 {
 	int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
 	int64_t outtotal = (int64_t)((idlePoolSize - 300)/30);
+	nsize = 34160;
 	if(outtotal >= 1000)
 	{
 		if(inValue > 1000*COIN)
@@ -3472,9 +3473,15 @@ int32_t gettotalout(CAmount inValue)
 		else if(inValue == COIN)
 			return 10;
 		else if(inValue >= 0.01 * COIN)
+		{
+			nsize = 226;
 			return 2;
+		}
 		else
+		{
+			nsize = 226;
 			return 1;
+		}
 	}
 	else if(outtotal > 1)
 	{
@@ -3483,14 +3490,26 @@ int32_t gettotalout(CAmount inValue)
 		else if(inValue == COIN)
 			return 10 <= outtotal ? 10 : outtotal;
 		else if(inValue >= 0.01 * COIN)
+		{
+			nsize = 226;
 			return 2;
+		}
 		else
+		{
+			nsize = 200;
 			return 1;
+		}
 	}
 	if(inValue >= 0.01 * COIN)
+	{
+		nsize = 226;
 		return 2;
+	}
 	else
+	{
+		nsize = 200;
 		return 1;
+	}
 }
 
 bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vector<string> & addrList)
@@ -3507,12 +3526,12 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 	CAmount inValue = out.tx->vout[out.i].nValue;
 	//int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
 	//int64_t outtotal = (int64_t)((idlePoolSize - 300)/30);
-	int32_t outcount = gettotalout(inValue);
-	size_t offset = (size_t)(outcount * 30);
+	size_t txsize = 0;
+	int32_t outcount = gettotalout(inValue, txsize);
 	CAmount noutAmount = 0;
-	CAmount fee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(300 + offset), (CAmount)1);
-	if(fee < ::minRelayTxFee.GetFee(300 + offset))
-		fee = ::minRelayTxFee.GetFee(300 + offset);
+	CAmount fee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(txsize), (CAmount)1);
+	if(fee < ::minRelayTxFee.GetFee(txsize))
+		fee = ::minRelayTxFee.GetFee(txsize);
 	
 	noutAmount = (CAmount)(inValue/outcount);
 	

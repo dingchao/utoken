@@ -3459,6 +3459,40 @@ bool signrawTX(CMutableTransaction & mergedTx, const CBasicKeyStore & basickeyst
     return true;
 }
 
+int32_t gettotalout(CAmount inValue)
+{
+	int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
+	int64_t outtotal = (int64_t)((idlePoolSize - 300)/30);
+	if(outtotal >= 1000)
+	{
+		if(inValue > 1000*COIN)
+			return 1000;
+		else if(inValue > COIN)
+			return inValue / COIN;
+		else if(inValue == COIN)
+			return 10;
+		else if(inValue >= 0.01 * COIN)
+			return 2;
+		else
+			return 1;
+	}
+	esle if(outtotal > 1)
+	{
+		if(inValue > COIN)
+			return std::min(inValue / COIN, outtotal);
+		else if(inValue == COIN)
+			return std::min(10, outtotal);
+		else if(inValue >= 0.01 * COIN)
+			return 2;
+		else
+			return 1;
+	}
+	if(inValue >= 0.01 * COIN)
+		return 2;
+	else
+		return 1;
+}
+
 bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vector<string> & addrList)
 {
 
@@ -3470,29 +3504,18 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
     rawTx.vin.push_back(in);
 
 	//calc vout size & out amount
-	size_t offset = (size_t)(addrList.size() * 30);
 	CAmount inValue = out.tx->vout[out.i].nValue;
 	int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
+	//int64_t outtotal = (int64_t)((idlePoolSize - 300)/30);
+	int32_t outcount = gettotalout(inValue);
+	size_t offset = (size_t)(outcount * 30);
 	CAmount noutAmount = 0;
 	CAmount fee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(300 + offset), (CAmount)1);
-	if(fee < mempool.estimateFee(1).GetFee(300+offset))
-		fee = mempool.estimateFee(1).GetFee(300+offset);
-	if(idlePoolSize >= 36000)
-	{
-		if(inValue > 1000 * COIN)
-			noutAmount = inValue/1000;
-		else if(inValue > 1 * COIN)
-			noutAmount = 1 * COIN;
-		else if(inValue == 1 * COIN)
-			noutAmount = inValue/10;
-		else
-			noutAmount = inValue - fee;
-	}
-	else
-	{
-		noutAmount = inValue/2;
-	}
-
+	if(fee < ::minRelayTxFee.GetFee(300 + offset))
+		fee = ::minRelayTxFee.GetFee(300 + offset);
+	
+	noutAmount = (CAmount)(inValue/outcount);
+	
 	//txout
 	CAmount outValue = 0;
     std::set<CBitcoinAddress> setAddress;
@@ -3510,10 +3533,6 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 		
 		if(outValue + noutAmount >= inValue)
 		{
-			CAmount minfee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(offset + rawTx.GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)),
-										mempool.estimateFee(1).GetFee(offset + rawTx.GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)));
-			if(fee < minfee)
-				fee = minfee;
 			CAmount amount = inValue - outValue - fee;
 			if(amount > 0)
 			{

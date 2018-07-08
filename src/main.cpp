@@ -3532,6 +3532,10 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 	CAmount fee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(txsize), (CAmount)1);
 	if(fee < ::minRelayTxFee.GetFee(txsize))
 		fee = ::minRelayTxFee.GetFee(txsize);
+	if(outcount > 2)
+		fee = 341600;
+	else
+		fee = 3000;
 	
 	noutAmount = (CAmount)(inValue/outcount);
 	

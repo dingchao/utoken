@@ -979,7 +979,7 @@ UniValue mempoolInfoToJSON(size_t nSize)
 
 UniValue getmempoolinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() != 0)
         throw runtime_error(
             "getmempoolinfo\n"
             "\nReturns details on the active state of the TX memory pool.\n"
@@ -996,7 +996,7 @@ UniValue getmempoolinfo(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getmempoolinfo", "")
         );
 
-	int64_t	size = (unsigned int)params[0].get_int64();
+	int64_t	size = 1;
 
     return mempoolInfoToJSON((size_t)size);
 }

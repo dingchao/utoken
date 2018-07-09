@@ -544,6 +544,8 @@ public:
       */
     CFeeRate GetMinFee(size_t sizelimit) const;
 
+	void GetMinFeeInfo() const;
+
     /** Remove transactions from the mempool until its dynamic size is <= sizelimit.
       *  pvNoSpendsRemaining, if set, will be populated with the list of transactions
       *  which are not in mempool which no longer have any spends in this mempool.

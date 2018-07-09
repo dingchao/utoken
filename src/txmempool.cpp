@@ -1057,6 +1057,14 @@ const CTxMemPool::setEntries & CTxMemPool::GetMemPoolChildren(txiter entry) cons
     return it->second.children;
 }
 
+void CTxMemPool::GetMinFeeInfo() const {
+	LOCK(cs);
+	cout << "blockSinceLastRollingFeeBump = " << blockSinceLastRollingFeeBump << endl
+		 << "rollingMinimumFeeRate = " << rollingMinimumFeeRate << endl
+		 << "lastRollingFeeUpdate = " << lastRollingFeeUpdate << endl
+		 << minReasonableRelayFee.ToString() << endl;
+}
+
 CFeeRate CTxMemPool::GetMinFee(size_t sizelimit) const {
     LOCK(cs);
     if (!blockSinceLastRollingFeeBump || rollingMinimumFeeRate == 0)

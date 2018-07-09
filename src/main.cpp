@@ -3533,9 +3533,15 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 	if(fee < ::minRelayTxFee.GetFee(txsize))
 		fee = ::minRelayTxFee.GetFee(txsize);
 	if(outcount > 2)
-		fee = 341600;
+	{
+		if(fee < 341600)
+			fee = 341600;
+	}
 	else
-		fee = 3000;
+	{
+		if(fee < 3200)
+			fee = 3200;
+	}
 	
 	noutAmount = (CAmount)(inValue/outcount);
 	

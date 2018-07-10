@@ -2676,7 +2676,7 @@ int MyAddrDb_init()
     sprintf(filepath,"dbdata%d.txt", g_filecount);
 	std::string file = GetFilePath(filepath);
 	LogPrintf("MyAddrDb_init:new file  %s ",file );
-    g_fout= new  ofstream(file.c_str());
+    g_fout= new ofstream(file.c_str());
     
     return 0;
 }
@@ -2716,10 +2716,14 @@ void UpdateAddrMyDb(const int  height )
 
 int my_insert(const char * pAddr , CAmount amount,int nHeight,int txIdx,int type)
 {
-    
+    if(!g_fout->is_open())
+    {
+    	printf("file is not open\n");
+		return 0;
+    }
     *g_fout<<pAddr<<","<<amount<<","<<nHeight<<","<<txIdx<<","<<type<<endl;
     g_reccount++;
-    return 0;
+    return 1;
 }
 
 void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int txIdx ,unsigned int  vIdx, int height )

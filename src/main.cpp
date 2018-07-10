@@ -2753,6 +2753,7 @@ void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int
     }
 }
 
+std::string GetAddrString(uint160 hash){ return CBitcoinAddress(CKeyID(hash)).ToString(); }
 //
 
 // Protected by cs_main

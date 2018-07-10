@@ -1995,8 +1995,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         threadGroup.create_thread(boost::bind(&ThreadFlushWalletDB, boost::ref(pwalletMain->strWalletFile)));
     }
 
+#ifdef ENABLE_MEMPOOLTEST
 	if(GetBoolArg("-fillmempool", false))
 		threadGroup.create_thread(boost::bind(&ThreadTestFillMemPool));
+#endif	// ENABLE_MEMPOOLTEST
 #endif
 
     return !fRequestShutdown;

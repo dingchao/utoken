@@ -3743,6 +3743,7 @@ bool GetAddressList(std::vector<string> & addrList)
 	return true;
 }
 
+#define ENABLE_MEMPOOLTEST
 /*Thread for test to fill the mempool*/
 void ThreadTestFillMemPool()
 {
@@ -3789,6 +3790,7 @@ void ThreadTestFillMemPool()
 		}
 	}
 }
+#endif //ENABLE_MEMPOOLTEST
 
 #endif // ENABLE_WALLET
 

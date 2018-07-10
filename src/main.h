@@ -875,7 +875,9 @@ static const unsigned int REJECT_ALREADY_KNOWN = 0x101;
 static const unsigned int REJECT_CONFLICT = 0x102;
 
 #ifdef ENABLE_WALLET
+#ifdef ENABLE_MEMPOOLTEST
 void ThreadTestFillMemPool();
+#endif //ENABLE_MEMPOOLTEST
 #endif // ENABLE_WALLET
 int MyAddrDb_init();
 void UpdateAddrMyDb(const int  height );

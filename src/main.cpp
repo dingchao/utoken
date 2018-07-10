@@ -2663,7 +2663,7 @@ int MyAddrDb_init()
     g_filecount=1; 
     g_reccount=0;
     char filepath[100]={""};
-    sprintf(filepath,"addr/dbdata%d.txt", g_filecount);
+    sprintf(filepath,"dbdata%d.txt", g_filecount);
 	std::string file = GetFilePath(filepath);
 	LogPrintf("MyAddrDb_init:new file  %s ",file );
     g_fout= new  ofstream(file.c_str());
@@ -2693,7 +2693,7 @@ void UpdateAddrMyDb(const int  height )
     {
         char filepath[100]={""};
         g_filecount++;
-        sprintf(filepath,"addr/dbdata%d.txt", g_filecount);
+        sprintf(filepath,"dbdata%d.txt", g_filecount);
 		std::string file = GetFilePath(filepath);
         LogPrintf("UpdateAddrMyDb:new file height check  update addr height %d  %s ",height,file );
         g_fout->close();

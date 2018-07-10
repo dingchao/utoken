@@ -35,6 +35,8 @@ static const int64_t nMaxDbCache = sizeof(void*) > 4 ? 16384 : 1024;
 //! min. -dbcache in (MiB)
 static const int64_t nMinDbCache = 4;
 
+extern std::map < std::string, std::pair<CAmount, CAmount> >  mapAddrStatistics;
+
 /** CCoinsView backed by the coin database (chainstate/) */
 class CCoinsViewDB : public CCoinsView
 {

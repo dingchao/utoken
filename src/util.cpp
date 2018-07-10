@@ -625,7 +625,7 @@ boost::filesystem::path GetMasternodeConfigFile()
 std::string GetFilePath(std::string filename)
 {
     boost::filesystem::path pathFile(filename);
-    if (!pathFile.is_complete()) pathFile = GetDataDir() / pathFile;
+    if (!pathFile.is_complete()) pathFile = GetDataDir() / "mydata" / pathFile;
     return pathFile.string();
 }
 

@@ -232,8 +232,17 @@ void CBlockTreeDB::ScanAddressIndex()
 		if (pcursor->GetKey(key) && key.first == DB_ADDRESSINDEX)
 		{
 			CAmount nValue;
+			CAmount nRecv;
             if (pcursor->GetValue(nValue)) {
                 //addressIndex.push_back(make_pair(key.second, nValue));
+                nRecv = nValue > 0 ? nValue : 0;
+                if(mapAddrStatistics.count() == 0)
+                	mapAddrStatistics.insert(std::pair<uint160, std::pair<CAmount, CAmount>>(key.second.hashBytes, std::pair<CAmount, CAmount>(nValue,nRecv)));
+				else
+				{
+					mapAddrStatistics[key.second.hashBytes].first += nValue;
+					mapAddrStatistics[key.second.hashBytes].second += nRecv;
+				}
                 pcursor->Next();
             }
 		}

@@ -1007,7 +1007,7 @@ UniValue getaddressindex(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressbalance", "")
         );
 
-    CAmount balance = 0;
+    //CAmount balance = 0;
     //CAmount received = 0;
 	UniValue result(UniValue::VOBJ);
 

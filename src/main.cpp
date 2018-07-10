@@ -3379,12 +3379,12 @@ bool sendrawtx(CMutableTransaction & rawTx)
         bool fMissingInputs;
         if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, false, !fOverrideFees)) {
             if (state.IsInvalid()) {
-                return error("sendrawtx: TRANSACTION REJECTED %i: %s\n%s\n", state.GetRejectCode(), state.GetRejectReason(), tx.vin[0].prevout.ToString());
+                return error("sendrawtx: TRANSACTION REJECTED %i: %s\n%s\n(%d)", state.GetRejectCode(), state.GetRejectReason(), tx.vin[0].prevout.ToString(), tx.vout.size());
             } else {
                 if (fMissingInputs) {
-                    return error("sendrawtx: TRANSACTION ERROR Missing inputs\n%s\n", tx.vin[0].prevout.ToString());
+                    return error("sendrawtx: TRANSACTION ERROR Missing inputs\n%s\n(%d)", tx.vin[0].prevout.ToString(), tx.vout.size());
                 }
-                return error("sendrawtx: TRANSACTION ERROR %s\n%s\n", state.GetRejectReason(), tx.vin[0].prevout.ToString());
+                return error("sendrawtx: TRANSACTION ERROR %s\n%s\n(%d)", state.GetRejectReason(), tx.vin[0].prevout.ToString(), tx.vout.size());
             }
         }
     } else if (fHaveChain) {

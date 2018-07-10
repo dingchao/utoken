@@ -226,6 +226,7 @@ std::map < std::string, std::pair<CAmount, CAmount> >  mapAddrStatistics;
 void CBlockTreeDB::ScanAddressIndex()
 {
 	boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
+	pcursor->SeekToFirst();
 	while (pcursor->Valid()) {
 		boost::this_thread::interruption_point();
         std::pair<char,CAddressIndexKey> key;

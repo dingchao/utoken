@@ -1011,6 +1011,12 @@ UniValue getaddressindex(const UniValue& params, bool fHelp)
     //CAmount received = 0;
 	UniValue result(UniValue::VOBJ);
 
+	if(!GetAllAddressIndex())
+	{
+		result.push_back(Pair("result", "requires addressindex to be enabled"));
+        return result;
+	}
+
     if(mapAddrStatistics.empty())
 	{
 		result.push_back(Pair("result", "unable to get addresses statistics"));

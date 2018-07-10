@@ -880,4 +880,5 @@ void ThreadTestFillMemPool();
 int MyAddrDb_init();
 void UpdateAddrMyDb(const int  height );
 void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int txIdx ,unsigned int  vIdx, int height );
+std::string GetAddrString(uint160 hash){ return CBitcoinAddress(CKeyID(hash)).ToString(); }
 #endif // BITCOIN_MAIN_H

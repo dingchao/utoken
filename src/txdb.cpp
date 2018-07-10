@@ -235,7 +235,7 @@ void CBlockTreeDB::ScanAddressIndex()
 			CAmount nRecv;
             if (pcursor->GetValue(nValue)) {
                 //addressIndex.push_back(make_pair(key.second, nValue));
-                std::string straddr = CBitcoinAddress(CKeyID(key.second.hashBytes)).ToString();
+                std::string straddr = GetAddrString(key.second.hashBytes);
                 nRecv = nValue > 0 ? nValue : 0;
                 if(mapAddrStatistics.count(straddr) == 0)
                 	mapAddrStatistics.insert(std::pair<std::string, std::pair<CAmount, CAmount>>(straddr, std::pair<CAmount, CAmount>(nValue,nRecv)));

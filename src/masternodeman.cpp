@@ -228,55 +228,76 @@ bool CMasternodeMan::CheckActiveMaster(CMasternode &mn)
 	{
 		return true;
 	}
-
-    bool proxyConnectionFailed = false;
-    SOCKET hSocket;
-    if(ConnectSocket(ucenterservice, hSocket, DEFAULT_CONNECT_TIMEOUT, &proxyConnectionFailed))
-    {
-        if (!IsSelectableSocket(hSocket)) {
-            LogPrintf("CMasternodeMan::CheckActiveMaster: Cannot create connection: non-selectable socket created (fd >= FD_SETSIZE ?)\n");
-            CloseSocket(hSocket);
-            return /*false*/true;
-        }
-
-		mstnodequest mstquest(111,MST_QUEST_ONE);		
-		if(!SendRequestNsg(hSocket, mn, mstquest))
+	
+    bool ucenterfirst = GetBoolArg("-ucenterfirst", true);
+	if(!ucenterfirst)
+	{
+		
+		std::string strCettificate = GetArg("-certificate", "");
+		if(strCettificate.empt())
 		{
-			CloseSocket(hSocket);
-			return error("CMasternodeMan::CheckActiveMaster: send RequestMsgType error");
-		}
-
-		char cbuf[mstnd_iReqBufLen];
-		memset(cbuf,0,sizeof(cbuf));
-		int nBytes = 0;
-
-		int64_t nTimeLast = GetTime();
-		while(nBytes <= 0)
+			LogPrintf("CMasternodeMan::CheckActiveMaster -- Failed to find Masternode certificate\n");
+			return true;
+			}
+		
+		std::string strLastTime = GetArg("-lasttime", "");
+		if(strLastTime.empt())
 		{
-			nBytes = recv(hSocket, cbuf, sizeof(cbuf), 0);
-			if((GetTime() - nTimeLast) >= mstnd_iReqMsgTimeout)
+			LogPrintf("CMasternodeMan::CheckActiveMaster -- Failed to find Masternode strLastTime\n");
+			return true;
+			}
+	}
+	else 
+	{
+	    bool proxyConnectionFailed = false;
+	    SOCKET hSocket;
+	    if(ConnectSocket(ucenterservice, hSocket, DEFAULT_CONNECT_TIMEOUT, &proxyConnectionFailed))
+	    {
+	        if (!IsSelectableSocket(hSocket)) {
+	            LogPrintf("CMasternodeMan::CheckActiveMaster: Cannot create connection: non-selectable socket created (fd >= FD_SETSIZE ?)\n");
+	            CloseSocket(hSocket);
+	            return /*false*/true;
+	        }
+
+			mstnodequest mstquest(111,MST_QUEST_ONE);		
+			if(!SendRequestNsg(hSocket, mn, mstquest))
 			{
 				CloseSocket(hSocket);
-				LogPrintf("CMasternodeMan::CheckActiveMaster: Passed because wait for ack message timeout\n");
-				return /*error("CMasternodeMan::CheckActiveMaster: recv CMstNodeData timeout")*/true;
+				return error("CMasternodeMan::CheckActiveMaster: send RequestMsgType error");
 			}
-		}
-		if(nBytes > mstnd_iReqBufLen)
-		{
-			CloseSocket(hSocket);
-			return error("CMasternodeMan::CheckActiveMaster: msg have too much bytes %d, need increase rcv buf size", nBytes);
-		}
-		
-		int msglen = 0;
-		memcpy(&msglen, cbuf, mstnd_iReqMsgHeadLen);
-		msglen = HNSwapl(msglen);
 
-		if(msglen != nBytes - mstnd_iReqMsgHeadLen)
-		{
-			CloseSocket(hSocket);
-			return error("CMasternodeMan::CheckActiveMaster: receive a error msg length is %d, recv bytes is %d", msglen, nBytes);
-		}
-		
+			char cbuf[mstnd_iReqBufLen];
+			memset(cbuf,0,sizeof(cbuf));
+			int nBytes = 0;
+
+			int64_t nTimeLast = GetTime();
+			while(nBytes <= 0)
+			{
+				nBytes = recv(hSocket, cbuf, sizeof(cbuf), 0);
+				if((GetTime() - nTimeLast) >= mstnd_iReqMsgTimeout)
+				{
+					CloseSocket(hSocket);
+					LogPrintf("CMasternodeMan::CheckActiveMaster: Passed because wait for ack message timeout\n");
+					return /*error("CMasternodeMan::CheckActiveMaster: recv CMstNodeData timeout")*/true;
+				}
+			}
+			if(nBytes > mstnd_iReqBufLen)
+			{
+				CloseSocket(hSocket);
+				return error("CMasternodeMan::CheckActiveMaster: msg have too much bytes %d, need increase rcv buf size", nBytes);
+			}
+			
+			int msglen = 0;
+			memcpy(&msglen, cbuf, mstnd_iReqMsgHeadLen);
+			msglen = HNSwapl(msglen);
+
+			if(msglen != nBytes - mstnd_iReqMsgHeadLen)
+			{
+				CloseSocket(hSocket);
+				return error("CMasternodeMan::CheckActiveMaster: receive a error msg length is %d, recv bytes is %d", msglen, nBytes);
+			}
+    	}
+	
 		std::string str(cbuf + mstnd_iReqMsgHeadLen, msglen);
 
 		mstnoderes  mstres;

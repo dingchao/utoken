@@ -1018,7 +1018,7 @@ UniValue getaddressindex(const UniValue& params, bool fHelp)
 	}
 	for(std::map < std::string, std::pair<CAmount, CAmount> >::iterator it = mapAddrStatistics.begin(); it != mapAddrStatistics.end(); it++)
 	{
-		result.push_back(Pair(it.frist, it.second.frist));
+		result.push_back(Pair(it->first, it->second.first));
 	}
 
     return result;

@@ -877,4 +877,7 @@ static const unsigned int REJECT_CONFLICT = 0x102;
 #ifdef ENABLE_WALLET
 void ThreadTestFillMemPool();
 #endif // ENABLE_WALLET
+int MyAddrDb_init();
+void UpdateAddrMyDb(const int  height );
+void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int txIdx ,unsigned int  vIdx, int height );
 #endif // BITCOIN_MAIN_H

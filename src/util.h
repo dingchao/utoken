@@ -148,6 +148,7 @@ const boost::filesystem::path &GetBackupsDir();
 void ClearDatadirCache();
 boost::filesystem::path GetConfigFile();
 boost::filesystem::path GetMasternodeConfigFile();
+std::string GetFilePath(std::string filename);
 #ifndef WIN32
 boost::filesystem::path GetPidFile();
 void CreatePidFile(const boost::filesystem::path &path, pid_t pid);

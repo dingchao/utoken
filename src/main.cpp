@@ -1276,7 +1276,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
 
         CAmount mempoolRejectFee = pool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
         if (mempoolRejectFee > 0 && nModifiedFees < mempoolRejectFee) {
-            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool min fee not met", false, strprintf("%d < %d", nFees, mempoolRejectFee));
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, strprintf("mempool min fee not met: (%d < %d)", nFees, mempoolRejectFee));
         } else if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nModifiedFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(entry.GetPriority(chainActive.Height() + 1))) {
             // Require that free transactions have sufficient priority to be mined in the next block.
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, strprintf("insufficient priority(%ld < %ld,size=%d)",nModifiedFees,::minRelayTxFee.GetFee(nSize), nSize));
@@ -1300,15 +1300,14 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
             // -limitfreerelay unit is thousand-bytes-per-minute
             // At default rate it would take over a month to fill 1GB
             if (dFreeCount >= GetArg("-limitfreerelay", DEFAULT_LIMITFREERELAY) * 10 * 1000)
-                return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "rate limited free transaction");
+                return state.DoS(0, false, REJECT_INSUFFICIENTFEE, strprintf("rate limited free transaction(%f >= %f)", dFreeCount, GetArg("-limitfreerelay", DEFAULT_LIMITFREERELAY) * 10000));
             LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
             dFreeCount += nSize;
         }
 
         if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
             return state.Invalid(false,
-                REJECT_HIGHFEE, "absurdly-high-fee",
-                strprintf("%d > %d", nFees, ::minRelayTxFee.GetFee(nSize) * 10000));
+                REJECT_HIGHFEE, strprintf("absurdly-high-fee(%d > %d)", nFees, ::minRelayTxFee.GetFee(nSize) * 10000));
 
         // Calculate in-mempool ancestors, up to a limit.
         CTxMemPool::setEntries setAncestors;
@@ -1318,7 +1317,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         size_t nLimitDescendantSize = GetArg("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT)*1000;
         std::string errString;
         if (!pool.CalculateMemPoolAncestors(entry, setAncestors, nLimitAncestors, nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, errString)) {
-            return state.DoS(0, false, REJECT_NONSTANDARD, "too-long-mempool-chain", false, errString);
+            return state.DoS(0, false, REJECT_NONSTANDARD, strprintf("too-long-mempool-chain(%s)", errString));
         }
 
         // A transaction that spends outputs that would be replaced by it is invalid. Now
@@ -3380,12 +3379,12 @@ bool sendrawtx(CMutableTransaction & rawTx)
         bool fMissingInputs;
         if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, false, !fOverrideFees)) {
             if (state.IsInvalid()) {
-                return error("sendrawtx: TRANSACTION REJECTED %i: %s\n%s\n", state.GetRejectCode(), state.GetRejectReason(), EncodeHexTx(tx));
+                return error("sendrawtx: TRANSACTION REJECTED %i: %s\n%s\n", state.GetRejectCode(), state.GetRejectReason(), tx.vin[0].prevout.ToString());
             } else {
                 if (fMissingInputs) {
-                    return error("sendrawtx: TRANSACTION ERROR Missing inputs\n%s\n", EncodeHexTx(tx));
+                    return error("sendrawtx: TRANSACTION ERROR Missing inputs\n%s\n", tx.vin[0].prevout.ToString());
                 }
-                return error("sendrawtx: TRANSACTION ERROR %s\n%s\n", state.GetRejectReason(), EncodeHexTx(tx));
+                return error("sendrawtx: TRANSACTION ERROR %s\n%s\n", state.GetRejectReason(), tx.vin[0].prevout.ToString());
             }
         }
     } else if (fHaveChain) {

@@ -987,7 +987,7 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
 
     return obj;
 }
-
+extern std::map < std::string, std::pair<CAmount, CAmount> >  mapAddrStatistics;
 UniValue getaddressindex(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)

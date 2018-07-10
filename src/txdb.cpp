@@ -221,7 +221,7 @@ bool CBlockTreeDB::ReadAddressUnspentIndex(uint160 addressHash, int type,
     return true;
 }
 
-std::map < uint160, std::pair<CAmount, CAmount> >  mapAddrStatistics;
+std::map < std::string, std::pair<CAmount, CAmount> >  mapAddrStatistics;
 
 void CBlockTreeDB::ScanAddressIndex()
 {
@@ -235,13 +235,14 @@ void CBlockTreeDB::ScanAddressIndex()
 			CAmount nRecv;
             if (pcursor->GetValue(nValue)) {
                 //addressIndex.push_back(make_pair(key.second, nValue));
+                std::string straddr = CBitcoinAddress(CKeyID(key.second.hashBytes)).ToString();
                 nRecv = nValue > 0 ? nValue : 0;
-                if(mapAddrStatistics.count(key.second.hashBytes) == 0)
-                	mapAddrStatistics.insert(std::pair<uint160, std::pair<CAmount, CAmount>>(key.second.hashBytes, std::pair<CAmount, CAmount>(nValue,nRecv)));
+                if(mapAddrStatistics.count(straddr) == 0)
+                	mapAddrStatistics.insert(std::pair<std::string, std::pair<CAmount, CAmount>>(straddr, std::pair<CAmount, CAmount>(nValue,nRecv)));
 				else
 				{
-					mapAddrStatistics[key.second.hashBytes].first += nValue;
-					mapAddrStatistics[key.second.hashBytes].second += nRecv;
+					mapAddrStatistics[straddr].first += nValue;
+					mapAddrStatistics[straddr].second += nRecv;
 				}
                 pcursor->Next();
             }

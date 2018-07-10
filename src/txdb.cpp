@@ -236,7 +236,7 @@ void CBlockTreeDB::ScanAddressIndex()
             if (pcursor->GetValue(nValue)) {
                 //addressIndex.push_back(make_pair(key.second, nValue));
                 nRecv = nValue > 0 ? nValue : 0;
-                if(mapAddrStatistics.count() == 0)
+                if(mapAddrStatistics.count(key.second.hashBytes) == 0)
                 	mapAddrStatistics.insert(std::pair<uint160, std::pair<CAmount, CAmount>>(key.second.hashBytes, std::pair<CAmount, CAmount>(nValue,nRecv)));
 				else
 				{

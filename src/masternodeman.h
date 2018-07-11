@@ -208,6 +208,7 @@ public:
     
     /// Check and activate the master node.
     bool CheckActiveMaster(CMasternode &mn);
+	bool GetCertificateFromUcenter(CMasternode &mn);
 
     /// Ask (source) node for mnb
     void AskForMN(CNode *pnode, const CTxIn &vin);

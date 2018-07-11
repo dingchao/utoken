@@ -162,6 +162,9 @@ public:
     CPubKey pubKeyMasternode;
     CMasternodePing lastPing;
     std::vector<unsigned char> vchSig;
+	
+	std::string certificate; //证书
+	int64_t validTimes;  //注册有效时间
     int64_t sigTime; //mnb message time
     int64_t nLastDsq; //the dsq count from the last dsq broadcast of this node
     int64_t nTimeLastChecked;

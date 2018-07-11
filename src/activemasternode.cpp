@@ -309,7 +309,7 @@ void CActiveMasternode::ManageStateLocal()
             LogPrintf("CActiveMasternode::ManageStateLocal -- %s: %s\n", GetStateString(), strNotCapableReason);
             return;
         }
-
+		
 		// check if it is registered on the Ulord center server
 		CMasternode mn(mnb);
 		if(!mnodeman.CheckActiveMaster(mn))

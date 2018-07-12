@@ -3582,7 +3582,7 @@ int32_t gettotalout(CAmount inValue, size_t & nsize)
 	}
 }
 
-bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vector<string> & addrList)
+bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vector<string> & addrList, CAmount & fee)
 {
 
 	//txin
@@ -3599,7 +3599,7 @@ bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vec
 	size_t txsize = 0;
 	int32_t outcount = gettotalout(inValue, txsize);
 	CAmount noutAmount = 0;
-	CAmount fee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(txsize), (CAmount)1);
+	fee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(txsize), (CAmount)1);
 	if(fee < ::minRelayTxFee.GetFee(txsize))
 		fee = ::minRelayTxFee.GetFee(txsize);
 	
@@ -3762,22 +3762,28 @@ bool Enoughrawtx(unsigned int nSize, CAmount fee, CAmount & addfee)
     return true;
 }
 
-bool Checkrawtx(CMutableTransaction & rawTx,const CTransaction & tx)
+bool Checkrawtx(CMutableTransaction & rawTx,const CTransaction & tx, CAmount & fee)
 {
 	unsigned int txsize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-	CCoinsView dummy;
-    CCoinsViewCache view(&dummy);
-	CAmount fee = view.GetValueIn(tx) - tx.GetValueOut();
-	CAmount needmode = 0;
+	//CCoinsView dummy;
+    //CCoinsViewCache view(&dummy);
+	//CAmount fee = view.GetValueIn(tx) - tx.GetValueOut();
+	CAmount needmore = 0;
 
-	if(!Enoughrawtx(txsize, fee, needmode))
+	if(!Enoughrawtx(txsize, fee, needmore))
 	{
 		int last = rawTx.vout.size() - 1;
 		int outVal = rawTx.vout[last].nValue;
-		if(outVal > needmode)
-			rawTx.vout[last].nValue = outVal - needmode;
+		if(outVal > needmore)
+		{
+			fee += needmore;
+			rawTx.vout[last].nValue = outVal - needmore;
+		}
 		else
+		{
+			fee += outVal;
 			rawTx.vout.pop_back();
+		}
 		return false;
 	}
 	return true;
@@ -3821,8 +3827,9 @@ void ThreadTestFillMemPool()
 
 				//CTransaction newtx;
 				CMutableTransaction rawTx;
+				CAmount txFee = 0;
 				bool IsOK = false;
-				if(!createrawtx(rawTx, out, addrList))
+				if(!createrawtx(rawTx, out, addrList, txFee))
 					continue;
 				while(!IsOK) {
 					if(!signrawTX(rawTx, *pwalletMain))
@@ -3832,7 +3839,7 @@ void ThreadTestFillMemPool()
 						LogPrintf("ThreadTestFillMemPool:sendrawtx:Decode rawtx error: %s", rawTx.ToString());
 						break;
 					}
-					IsOK = Checkrawtx(rawTx, tx);
+					IsOK = Checkrawtx(rawTx, tx, txFee);
 				}
 				if(!IsOK)
 					continue;

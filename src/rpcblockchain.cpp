@@ -144,7 +144,17 @@ UniValue getblockcount(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    return chainActive.Height();
+	UniValue result(UniValue::VOBJ);
+	result.push_back(Pair("height", chainActive.Height()));
+	int nBlockHeight = chainActive.Height();
+	while(true)
+	{
+		if(CSuperblock::IsValidBlockHeight(nBlockHeight)))
+			break;
+		nBlockHeight++;
+	}
+	result.push_back(Pair("next superBlock", nBlockHeight));
+    return result;
 }
 
 UniValue getbestblockhash(const UniValue& params, bool fHelp)

@@ -149,7 +149,8 @@ UniValue getblockcount(const UniValue& params, bool fHelp)
 	int nBlockHeight = chainActive.Height();
 	while(true)
 	{
-		if(CSuperblock::IsValidBlockHeight(nBlockHeight)))
+		if( nBlockHeight >= Params().GetConsensus().nSuperblockStartBlock &&
+            ((nBlockHeight % Params().GetConsensus().nSuperblockCycle) == 0) )
 			break;
 		nBlockHeight++;
 	}

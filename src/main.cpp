@@ -3755,7 +3755,7 @@ bool Enoughrawtx(unsigned int nSize, CAmount fee, CAmount & addfee)
     if (mempoolRejectFee > 0 && fee < mempoolRejectFee) {
 		addfee = mempoolRejectFee - fee;
 		return false;
-    }else if (fee < rateRejectFee)) {
+    }else if (fee < rateRejectFee) {
 		addfee = rateRejectFee - fee;
 		return false;
     }

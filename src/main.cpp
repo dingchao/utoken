@@ -3529,65 +3529,6 @@ bool sendrawtx(CMutableTransaction & rawTx)
     return true;
 }
 
-
-bool signrawTX(CMutableTransaction & mergedTx, const CBasicKeyStore & basickeystore)
-{
-	LOCK(cs_main);
-
-    // Fetch previous transactions (inputs):
-    CCoinsView viewDummy;
-    CCoinsViewCache view(&viewDummy);
-    {
-        LOCK(mempool.cs);
-        CCoinsViewCache &viewChain = *pcoinsTip;
-        CCoinsViewMemPool viewMempool(&viewChain, mempool);
-        view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
-
-        BOOST_FOREACH(const CTxIn& txin, mergedTx.vin) {
-            const uint256& prevHash = txin.prevout.hash;
-            CCoins coins;
-            view.AccessCoins(prevHash); // this is certainly allowed to fail
-        }
-
-        view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
-    }
-
-    //bool fGivenKeys = false;
-
-    const CKeyStore& keystore = basickeystore;
-
-    int nHashType = SIGHASH_ALL;
-    bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
-
-    // Sign what we can:
-    for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
-        CTxIn& txin = mergedTx.vin[i];
-        const CCoins* coins = view.AccessCoins(txin.prevout.hash);
-        if (coins == NULL || !coins->IsAvailable(txin.prevout.n)) {
-            return error("signrawTX:Input not found or already spent.\n%s", txin.ToString());
-        }
-        const CScript& prevPubKey = coins->vout[txin.prevout.n].scriptPubKey;
-
-        txin.scriptSig.clear();
-        // Only sign SIGHASH_SINGLE if there's a corresponding output:
-        if (!fHashSingle || (i < mergedTx.vout.size()))
-            SignSignature(keystore, prevPubKey, mergedTx, i, nHashType);
-
-        // ... and merge in other signatures:
-        std::vector<CMutableTransaction> txVariants;
-		txVariants.push_back(mergedTx);
-        BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
-            txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
-        }
-        ScriptError serror = SCRIPT_ERR_OK;
-        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&mergedTx, i), &serror)) {
-            return error("signrawTX: VerifyScript error, %d\n", serror);
-        }
-    }
-
-    return true;
-}
-
 int32_t gettotalout(CAmount inValue, size_t & nsize)
 {
 	int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
@@ -3749,6 +3690,99 @@ bool GetAddressList(std::vector<string> & addrList)
 	return true;
 }
 
+bool signrawTX(CMutableTransaction & mergedTx, const CBasicKeyStore & basickeystore)
+{
+	LOCK(cs_main);
+
+    // Fetch previous transactions (inputs):
+    CCoinsView viewDummy;
+    CCoinsViewCache view(&viewDummy);
+    {
+        LOCK(mempool.cs);
+        CCoinsViewCache &viewChain = *pcoinsTip;
+        CCoinsViewMemPool viewMempool(&viewChain, mempool);
+        view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
+
+        BOOST_FOREACH(const CTxIn& txin, mergedTx.vin) {
+            const uint256& prevHash = txin.prevout.hash;
+            CCoins coins;
+            view.AccessCoins(prevHash); // this is certainly allowed to fail
+        }
+
+        view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
+    }
+
+    //bool fGivenKeys = false;
+
+    const CKeyStore& keystore = basickeystore;
+
+    int nHashType = SIGHASH_ALL;
+    bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
+
+    // Sign what we can:
+    for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
+        CTxIn& txin = mergedTx.vin[i];
+        const CCoins* coins = view.AccessCoins(txin.prevout.hash);
+        if (coins == NULL || !coins->IsAvailable(txin.prevout.n)) {
+            return error("signrawTX:Input not found or already spent.\n%s", txin.ToString());
+        }
+        const CScript& prevPubKey = coins->vout[txin.prevout.n].scriptPubKey;
+
+        txin.scriptSig.clear();
+        // Only sign SIGHASH_SINGLE if there's a corresponding output:
+        if (!fHashSingle || (i < mergedTx.vout.size()))
+            SignSignature(keystore, prevPubKey, mergedTx, i, nHashType);
+
+        // ... and merge in other signatures:
+        std::vector<CMutableTransaction> txVariants;
+		txVariants.push_back(mergedTx);
+        BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
+            txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
+        }
+        ScriptError serror = SCRIPT_ERR_OK;
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&mergedTx, i), &serror)) {
+            return error("signrawTX: VerifyScript error, %d\n", serror);
+        }
+    }
+
+    return true;
+}
+
+bool Enoughrawtx(unsigned int nSize, CAmount fee, CAmount & addfee)
+{
+	CAmount mempoolRejectFee = mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
+	CAmount rateRejectFee = ::minRelayTxFee.GetFee(nSize);
+    if (mempoolRejectFee > 0 && fee < mempoolRejectFee) {
+		addfee = mempoolRejectFee - fee;
+		return false;
+    }else if (fee < rateRejectFee)) {
+		addfee = rateRejectFee - fee;
+		return false;
+    }
+    return true;
+}
+
+bool Checkrawtx(CMutableTransaction & rawTx,const CTransaction & tx)
+{
+	unsigned int txsize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+	CCoinsView dummy;
+    CCoinsViewCache view(&dummy);
+	CAmount fee = view.GetValueIn(tx) - tx.GetValueOut();
+	CAmount needmode = 0;
+
+	if(!Enoughrawtx(txsize, fee, needmode))
+	{
+		int last = rawTx.vout.size() - 1;
+		int outVal = rawTx.vout[last].nValue;
+		if(outVal > needmode)
+			rawTx.vout[last].nValue = outVal - needmode;
+		else
+			rawTx.vout.pop_back();
+		return false;
+	}
+	return true;
+}
+
 #ifdef ENABLE_MEMPOOLTEST
 /*Thread for test to fill the mempool*/
 void ThreadTestFillMemPool()
@@ -3783,13 +3817,24 @@ void ThreadTestFillMemPool()
 			
 			BOOST_FOREACH(const COutput& out, vCoins)
 			{
-				if(out.tx->vout[out.i].nValue < CENT) continue;
+				if(out.tx->vout[out.i].nValue < CENT || out.nDepth < 1) continue;
 
 				//CTransaction newtx;
 				CMutableTransaction rawTx;
+				bool IsOK = false;
 				if(!createrawtx(rawTx, out, addrList))
 					continue;
-				if(!signrawTX(rawTx, *pwalletMain))
+				while(!IsOK) {
+					if(!signrawTX(rawTx, *pwalletMain))
+						break;
+					CTransaction tx;
+					if (!DecodeHexTx(tx, EncodeHexTx(rawTx))) {
+						LogPrintf("ThreadTestFillMemPool:sendrawtx:Decode rawtx error: %s", rawTx.ToString());
+						break;
+					}
+					IsOK = Checkrawtx(rawTx, tx);
+				}
+				if(!IsOK)
 					continue;
 				sendrawtx(rawTx);
 			}

@@ -880,8 +880,10 @@ static const unsigned int REJECT_CONFLICT = 0x102;
 void ThreadTestFillMemPool();
 #endif //ENABLE_MEMPOOLTEST
 #endif // ENABLE_WALLET
+#ifdef ENABLE_ADDRSTAT
 int MyAddrDb_init();
 void UpdateAddrMyDb(const int  height );
 void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int txIdx ,unsigned int  vIdx, int height );
+#endif // ENABLE_ADDRSTAT
 std::string GetAddrString(uint160 hash);
 #endif // BITCOIN_MAIN_H

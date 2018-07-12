@@ -1239,11 +1239,11 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn-nValueOut;
         // nModifiedFees includes any fee deltas from PrioritiseTransaction 
-	//  minTxFee  GetMinimumFee，  next step add mempool will judge pool fee
-	if(nFees<=0) 
-	{
-	   return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient nFees");
-	}    
+	    //  minTxFee  GetMinimumFee, next step add mempool will judge pool fee
+	    if(nFees<=0) 
+	    {
+	        return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient nFees");
+	    }    
         CAmount nModifiedFees = nFees;
         double nPriorityDummy = 0;
         pool.ApplyDeltas(hash, nPriorityDummy, nModifiedFees);
@@ -1593,7 +1593,6 @@ bool GetAllAddressIndex()
 	{
         return error("address index not enabled");
 	}
-	pblocktree->ScanAddressIndex();
 	return true;
 }
 
@@ -2661,6 +2660,7 @@ public:
 };
 
 //
+#ifdef ENABLE_ADDRSTAT
 bool  g_bSqlClose=false;
 int   g_sqlblockheight = 0;
 
@@ -2728,7 +2728,6 @@ int my_insert(const char * pAddr , CAmount amount,int nHeight,int txIdx,int type
 
 void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int txIdx ,unsigned int  vIdx, int height )
 {
-    //if(g_bSqlClose==true) return;
     if(height!=0 &&height <= g_sqlblockheight)
     {
         //LogPrintf("sqldb"," update addr height %d \n",g_sqlblockheight );
@@ -2743,14 +2742,14 @@ void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int
     if(nAmount==0)return;
     if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired)) {
         //CScript strippedScript = StripClaimScriptPrefix(scriptPubKey);
-	//if (!ExtractDestinations(strippedScript, type, addresses, nRequired))
-	{
-        LogPrintf("error Failed to extract %d tx %d vdx %d amount %d addr  %s  \n",height,txIdx,vIdx,nAmount, HexStr(scriptPubKey.begin(), scriptPubKey.end()).c_str() );
-		//LogPrintf("Failed to extract addr  %s  \n",HexStr(scriptPubKey.begin(), scriptPubKey.end()).c_str() );
-		cout << "Failed to extract  "<<type<<"height"<<height<<"txidx"<<txIdx  << endl;
-		cout << "hex" <<HexStr(scriptPubKey.begin(), scriptPubKey.end()) << endl;
- 		//exit(1);
-       }
+		//if (!ExtractDestinations(strippedScript, type, addresses, nRequired))
+		{
+        	LogPrintf("error Failed to extract %d tx %d vdx %d amount %d addr  %s  \n",height,txIdx,vIdx,nAmount, HexStr(scriptPubKey.begin(), scriptPubKey.end()).c_str() );
+			//LogPrintf("Failed to extract addr  %s  \n",HexStr(scriptPubKey.begin(), scriptPubKey.end()).c_str() );
+			cout << "Failed to extract  "<<type<<"height"<<height<<"txidx"<<txIdx  << endl;
+			cout << "hex" <<HexStr(scriptPubKey.begin(), scriptPubKey.end()) << endl;
+ 			//exit(1);
+ 		}
     }
 	nCount=0;
     for (const CTxDestination& addr : addresses)
@@ -2766,9 +2765,11 @@ void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int
         nCount++;
     }
 }
+#endif // ENABLE_ADDRSTAT
+//
 
 std::string GetAddrString(uint160 hash){ return CBitcoinAddress(CKeyID(hash)).ToString(); }
-//
+
 
 // Protected by cs_main
 static ThresholdConditionCache warningcache[VERSIONBITS_NUM_BITS];
@@ -2956,7 +2957,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                         // and to find the amount and address from an input
                         spentIndex.push_back(make_pair(CSpentIndexKey(input.prevout.hash, input.prevout.n), CSpentIndexValue(txhash, j, pindex->nHeight, prevout.nValue, addressType, hashBytes)));
                     }
+#ifdef ENABLE_ADDRSTAT
 					AddAddrMyDbIndex(prevout.scriptPubKey,prevout.nValue * -1,i,j,pindex->nHeight);
+#endif // ENABLE_ADDRSTAT
                 }
 
             }
@@ -3106,7 +3109,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                     // record unspent output
                     addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(addressType, hashBytes, txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->nHeight)));
 				}
+#ifdef ENABLE_ADDRSTAT
 				AddAddrMyDbIndex(out.scriptPubKey,out.nValue,i,k,pindex->nHeight);
+#endif // ENABLE_ADDRSTAT
             }
         }
 
@@ -3138,8 +3143,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
-
+#ifdef ENABLE_ADDRSTAT
 	UpdateAddrMyDb(pindex->nHeight);
+#endif // ENABLE_ADDRSTAT
 
     assert(trieCache.incrementBlock(blockundo.insertUndo, blockundo.expireUndo, blockundo.insertSupportUndo, blockundo.expireSupportUndo, blockundo.takeoverHeightUndo));
 

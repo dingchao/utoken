@@ -199,7 +199,7 @@ public:
         consensus.bdgetReward5 = int64_t(520833.333 * COIN);
         consensus.colleteral = int64_t(1e4 * COIN);                         // masternode colleteral
 
-        consensus.nSubsidyHalvingInterval = 840960;                     // 4 years, 24 * 60 / 2.5 * 365 * 4
+        consensus.nSubsidyHalvingInterval = 840960;                     // 4 years, 24 * 60 / 2.5 * 365 * 4 
 #ifdef ENABLE_MNTEST
 		consensus.nMasternodePaymentsStartBlock = 10;
         consensus.nMasternodePaymentsIncreasePeriod = 576 * 365;        // 17280 - actual historical value
@@ -293,7 +293,7 @@ public:
 
         //vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
         vFixedSeeds.clear();
-        vSeeds.clear();
+        vSeeds.clear();		
 #ifndef ENABLE_MNTEST
         vSeeds.push_back(CDNSSeedData("ulord.one", "seed1.ulord.one"));
 		vSeeds.push_back(CDNSSeedData("ulord.one", "seed2.ulord.one"));  
@@ -313,7 +313,7 @@ public:
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
-            (    0, uint256S("0x0000079b37c3c290dc81e95bca28aa7df5636145ae35ebee86e10cc3cce96fb2"))
+            (   0, uint256S("0x0000079b37c3c290dc81e95bca28aa7df5636145ae35ebee86e10cc3cce96fb2"))
 #ifndef ENABLE_MNTEST
             (   10, uint256S("0x0000021d155df9c31a41f102ea2490a6706f58cc6a5bfac24723cec75804f82a"))
             (  100, uint256S("0x000001b236b617573c507362b517d721235efe9371aa9f4e9eaee6517e5af6a2"))

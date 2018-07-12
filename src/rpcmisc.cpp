@@ -987,7 +987,7 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
 
     return obj;
 }
-extern std::map < std::string, std::pair<CAmount, CAmount> >  mapAddrStatistics;
+
 UniValue getaddressindex(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -1017,15 +1017,7 @@ UniValue getaddressindex(const UniValue& params, bool fHelp)
         return result;
 	}
 
-    if(mapAddrStatistics.empty())
-	{
-		result.push_back(Pair("result", "unable to get addresses statistics"));
-        return result;
-	}
-	for(std::map < std::string, std::pair<CAmount, CAmount> >::iterator it = mapAddrStatistics.begin(); it != mapAddrStatistics.end(); it++)
-	{
-		result.push_back(Pair(it->first, it->second.first/COIN));
-	}
+	result.push_back(Pair("result", "to be add ..."));
 
     return result;
 

@@ -221,38 +221,6 @@ bool CBlockTreeDB::ReadAddressUnspentIndex(uint160 addressHash, int type,
     return true;
 }
 
-std::map < std::string, std::pair<CAmount, CAmount> >  mapAddrStatistics;
-
-void CBlockTreeDB::ScanAddressIndex()
-{
-	boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
-	pcursor->SeekToFirst();
-	mapAddrStatistics.clear();
-	while (pcursor->Valid()) {
-		boost::this_thread::interruption_point();
-        std::pair<char,CAddressIndexKey> key;
-		if (pcursor->GetKey(key) && key.first == DB_ADDRESSINDEX)
-		{
-			CAmount nValue;
-			CAmount nRecv;
-            if (pcursor->GetValue(nValue)) {
-                //addressIndex.push_back(make_pair(key.second, nValue));
-                std::string straddr = GetAddrString(key.second.hashBytes);
-                nRecv = nValue > 0 ? nValue : 0;
-                if(mapAddrStatistics.count(straddr) == 0)
-                	mapAddrStatistics.insert(std::pair<std::string, std::pair<CAmount, CAmount>>(straddr, std::pair<CAmount, CAmount>(nValue,nRecv)));
-				else
-				{
-					mapAddrStatistics[straddr].first += nValue;
-					mapAddrStatistics[straddr].second += nRecv;
-				}
-                pcursor->Next();
-            }
-		}
-		pcursor->Next();
-	}
-}
-
 bool CBlockTreeDB::WriteAddressIndex(const std::vector<std::pair<CAddressIndexKey, CAmount > >&vect) {
     CDBBatch batch(&GetObfuscateKey());
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=vect.begin(); it!=vect.end(); it++)

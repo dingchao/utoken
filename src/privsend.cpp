@@ -124,7 +124,20 @@ void CPrivSendPool::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataS
         }
 
         // if the queue is ready, submit if we can
-        if(!dsq.fReady) {
+        if(dsq.fReady) {
+#ifdef ENABLE_WALLET
+            if(!pSubmittedToMasternode) return;
+            if((CNetAddr)pSubmittedToMasternode->addr != (CNetAddr)pmn->addr) {
+                LogPrintf("DSQUEUE -- message doesn't match current Masternode: pSubmittedToMasternode=%s, addr=%s\n", pSubmittedToMasternode->addr.ToString(), pmn->addr.ToString());
+                return;
+            }
+
+            if(nState == POOL_STATE_QUEUE) {
+                LogPrint("privatesend", "DSQUEUE -- PrivateSend queue (%s) is ready on masternode %s\n", dsq.ToString(), pmn->addr.ToString());
+                SubmitDenominate();
+            }
+#endif // ENABLE_WALLET
+        } else {
             BOOST_FOREACH(CPrivSendQueue q, vecPrivSendQueue) {
                 if(q.vin == dsq.vin) {
                     // no way same mn can send another "not yet ready" dsq this soon
@@ -151,20 +164,7 @@ void CPrivSendPool::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataS
             vecPrivSendQueue.push_back(dsq);
             dsq.Relay();
         }
-#ifdef ENABLE_WALLET
-	else {
-            if(!pSubmittedToMasternode) return;
-            if((CNetAddr)pSubmittedToMasternode->addr != (CNetAddr)pmn->addr) {
-                LogPrintf("DSQUEUE -- message doesn't match current Masternode: pSubmittedToMasternode=%s, addr=%s\n", pSubmittedToMasternode->addr.ToString(), pmn->addr.ToString());
-                return;
-            }
-     
-            if(nState == POOL_STATE_QUEUE) {
-                LogPrint("privatesend", "DSQUEUE -- PrivateSend queue (%s) is ready on masternode %s\n", dsq.ToString(), pmn->addr.ToString());
-                SubmitDenominate();
-            }
-        }
-#endif // ENABLE_WALLET
+
     } else if(strCommand == NetMsgType::DSVIN) {
 
         if(pfrom->nVersion < MIN_PRIVATESEND_PEER_PROTO_VERSION) {

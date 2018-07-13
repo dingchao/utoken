@@ -363,7 +363,7 @@ CMasternodeMan::CMasternodeMan()
 	  return /*false*/true;
   }
 
- bool CMasternodeMan::CheckMasterIsExpire(CMasternode &mn)
+ bool CMasternodeMan::CheckCertificateIsExpire(CMasternode &mn)
 {
 	//离过期时间小于1小时,请求更新证书
 	if(mn.validTimes <= 0 || mn.validTimes - 3600 < GetTime())

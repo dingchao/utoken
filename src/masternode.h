@@ -33,6 +33,9 @@ public:
     CTxIn vin;
     uint256 blockHash;
     int64_t sigTime; //mnb message times
+    	
+	int64_t validTimes;  //注册有效时间
+	std::string certificate; //证书
     std::vector<unsigned char> vchSig;
     //removed stop
 
@@ -40,6 +43,8 @@ public:
         vin(),
         blockHash(),
         sigTime(0),
+        validTimes(0),
+        certificate(),
         vchSig()
         {}
 
@@ -52,6 +57,8 @@ public:
         READWRITE(vin);
         READWRITE(blockHash);
         READWRITE(sigTime);
+		READWRITE(validTimes);
+		READWRITE(certificate);
         READWRITE(vchSig);
     }
 
@@ -65,6 +72,8 @@ public:
         swap(first.vin, second.vin);
         swap(first.blockHash, second.blockHash);
         swap(first.sigTime, second.sigTime);
+		swap(first.validTimes, second.validTimes);
+		swap(first.certificate, second.certificate);
         swap(first.vchSig, second.vchSig);
     }
 
@@ -368,6 +377,8 @@ public:
         READWRITE(pubKeyCollateralAddress);
         READWRITE(pubKeyMasternode);
         READWRITE(vchSig);
+		READWRITE(certificate);
+		READWRITE(validTimes);
         READWRITE(sigTime);
         READWRITE(nProtocolVersion);
         READWRITE(lastPing);

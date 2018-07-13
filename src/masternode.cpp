@@ -823,6 +823,10 @@ CMasternodePing::CMasternodePing(CTxIn& vinNew)
     vin = vinNew;
     blockHash = chainActive[chainActive.Height() - 12]->GetBlockHash();
     sigTime = GetAdjustedTime();
+	
+	CMasternode* pmn = mnodeman.Find(vin);
+	validTimes = pmn.validTimes;
+	certificate = pmn.certificate;
     vchSig = std::vector<unsigned char>();
 }
 

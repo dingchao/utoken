@@ -198,20 +198,22 @@ bool VerifymsnRes(const mstnoderes & res, const mstnodequest & qst)
 	return true;
 }
 
-bool VerifymsnRes(const CMasternode &qst)
+bool VerifymsnRes(const CMasternode &mn)
 {
 	CPubKey pubkeyFromSig;
 	std::vector<unsigned char> vchSigRcv;
-	vchSigRcv = ParseHex(qst.certificate);
+	vchSigRcv = ParseHex(mn.certificate);
 		
 	CPubKey pubkeyLocal(ParseHex(mstnd_SigPubkey));
+	CBitcoinAddress address(mn.pubKeyCollateralAddress.GetID());
 		
 	CHashWriter ss(SER_GETHASH, 0);
     ss << strMessageMagic;
-    ss << qst.vin.prevout.hash;
-	ss << qst.vin.prevout.n;
-	ss << qst.addr.ToString();
-	ss << qst.validTimes;
+    ss << mn.vin.prevout.hash;
+	ss << mn.vin.prevout.n;
+	//ss << qst.addr.ToString();
+	ss << address.ToString();
+	ss << mn.validTimes;
 	
 	uint256 reqhash = ss.GetHash();
 		
@@ -224,9 +226,6 @@ bool VerifymsnRes(const CMasternode &qst)
         LogPrintf("Keys don't match: pubkey=%s, pubkeyFromSig=%s, hash=%s, vchSig=%s",
                     pubkeyLocal.GetID().ToString().c_str(), pubkeyFromSig.GetID().ToString().c_str(), ss.GetHash().ToString().c_str(),
                     EncodeBase64(&vchSigRcv[0], vchSigRcv.size()));
-		/*std::cout << "Keys don't match: pubkey = " << pubkeyLocal.GetID().ToString() << " ,pubkeyFromSig = " << pubkeyFromSig.GetID().ToString()
-			<< std::endl << "wordHash = " << reqhash.ToString()
-			<< std::endl << "vchSig = " << EncodeBase64(&vchSigRcv[0], vchSigRcv.size()) << std::endl;*/
         return false;
     }
 	return true;
@@ -322,11 +321,14 @@ CMasternodeMan::CMasternodeMan()
   
 		  if(mstres._num > 0)
 		  {
+		  	  #if 0
 			  if(!VerifymsnRes(mstres, mstquest))
 			  {
 				  CloseSocket(hSocket);
 				  return error("CMasternodeMan::CheckActiveMaster: receive a error msg can't verify");;
 			  }
+			  #endif 
+			  
 			  std::vector<CMstNodeData> vecnode;
 			  CMstNodeData	mstnode;
 			  for (int i = 0; i < mstres._num; ++i)
@@ -338,7 +340,13 @@ CMasternodeMan::CMasternodeMan()
 					  CloseSocket(hSocket);
 					  return error("receive a invalid validflag by mstnode %s, validflag %d", mstnode._masteraddr.c_str(), mstnode._validflag);
 				  }
+				  mn.validTimes = mstnode._validTimes;
+				  mn.certificate = mstnode._certificate;
 				  vecnode.push_back(mstnode);
+			  	  if(!VerifymsnRes(mn))
+				  {
+					  return false;
+				  }
 			  }
 			  //std::cout << "MasterNode check success *********************" << std::endl;
 			  LogPrintf("CMasternodeMan::CheckActiveMaster: MasterNode %s check success\n", mstquest._masteraddr);
@@ -355,6 +363,33 @@ CMasternodeMan::CMasternodeMan()
 	  return /*false*/true;
   }
 
+ bool CMasternodeMan::CheckMasterIsExpire(CMasternode &mn)
+{
+	//离过期时间小于1小时,请求更新证书
+	if(mn.validTimes <= 0 || mn.validTimes - 3600 < GetTime())
+	{
+		if(!GetCertificateFromUcenter(mn))
+		{
+			LogPrintf("CMasternodeMan::CheckCertificateIsExpire: connect to center server update certificate failed\n");
+			return true;
+		}		
+	}
+	
+	return false;
+}
+
+  bool CMasternodeMan::CheckRegisteredMaster(CMasternode &mn)
+ {
+	 //证书验证
+	 if(!VerifymsnRes(mn))
+	 {
+		 return false;
+	 }
+ 
+	 return true;
+ }
+
+ 
 bool CMasternodeMan::CheckActiveMaster(CMasternode &mn)
 {
 	//return false;
@@ -388,8 +423,8 @@ bool CMasternodeMan::CheckActiveMaster(CMasternode &mn)
 		}
 		//转换为时间戳
 		struct tm tmp_time;
-		strftime(strLastTime.c_str(), "%Y%m%d %H:%M:%S",tmp_time);
-		time_t t = mktime(tmp_time);
+		strftime(strLastTime.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
+		time_t t = mktime(&tmp_time);
 		LogPrintf("CMasternodeMan::CheckActiveMaster -- strLastTime = %ld\n",t);
 		
 		if(t < GetAdjustedTime())

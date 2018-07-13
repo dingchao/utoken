@@ -319,7 +319,9 @@ void CActiveMasternode::ManageStateLocal()
 			LogPrintf("CMasternodeBroadcast::ManageStateLocal -- Didn't registered on Ulord Center, masternode=%s\n", mn.vin.prevout.ToStringShort());
 			return;
 		}
-
+		mnb.validTimes = mn.validTimes;
+		mnb.certificate = mn.certificate;
+		
         fPingerEnabled = true;
         nState = ACTIVE_MASTERNODE_STARTED;
 

@@ -209,6 +209,8 @@ public:
     /// Check and activate the master node.
     bool CheckActiveMaster(CMasternode &mn);
 	bool GetCertificateFromUcenter(CMasternode &mn);
+	bool CheckCertificateIsExpire(CMasternode &mn);
+	bool CheckRegisteredMaster(CMasternode &mn);
 
     /// Ask (source) node for mnb
     void AskForMN(CNode *pnode, const CTxIn &vin);
@@ -480,6 +482,8 @@ private:
         ar & _hostname;  
         ar & _hostip;  
         ar & _validflag;
+		ar & _validTimes;
+		ar & _certificate;
         //ar & _llAmount;  
     }  
 /*addr char(50) not null primary key,
@@ -510,6 +514,8 @@ public:
         _hostname  = b._hostname;
         _hostip    = b._hostip;
         _validflag = b._validflag;
+		_certificate = b._certificate;
+		_validTimes = b._validTimes;
         return * this;
     }
 public:  
@@ -518,7 +524,9 @@ public:
     std::string _txid;      //  
     std::string _hostname;  // 
     std::string _hostip;    // 
-    int         _validflag; //
+    int         _validflag; //	
+	std::string _certificate; //证书
+	int64_t _validTimes;  //注册有效时间
     int         _time;
     long long   _llAmount;  // 
     std::string _text;  

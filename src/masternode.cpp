@@ -23,6 +23,8 @@ CMasternode::CMasternode() :
     pubKeyMasternode(),
     lastPing(),
     vchSig(),
+	certificate(),
+	validTimes(0),
     sigTime(GetAdjustedTime()),
     nLastDsq(0),
     nTimeLastChecked(0),
@@ -46,6 +48,8 @@ CMasternode::CMasternode(CService addrNew, CTxIn vinNew, CPubKey pubKeyCollatera
     pubKeyMasternode(pubKeyMasternodeNew),
     lastPing(),
     vchSig(),
+    certificate(),
+    validTimes(0),
     sigTime(GetAdjustedTime()),
     nLastDsq(0),
     nTimeLastChecked(0),
@@ -69,6 +73,8 @@ CMasternode::CMasternode(const CMasternode& other) :
     pubKeyMasternode(other.pubKeyMasternode),
     lastPing(other.lastPing),
     vchSig(other.vchSig),
+    certificate(other.certificate),
+    validTimes(other.validTimes),    
     sigTime(other.sigTime),
     nLastDsq(other.nLastDsq),
     nTimeLastChecked(other.nTimeLastChecked),
@@ -92,6 +98,8 @@ CMasternode::CMasternode(const CMasternodeBroadcast& mnb) :
     pubKeyMasternode(mnb.pubKeyMasternode),
     lastPing(mnb.lastPing),
     vchSig(mnb.vchSig),
+    certificate(mnb.certificate),
+    validTimes(mnb.validTimes),
     sigTime(mnb.sigTime),
     nLastDsq(0),
     nTimeLastChecked(0),
@@ -301,7 +309,8 @@ void CMasternode::Check(bool fForce)
 	{
 		nTimeLastCheckedRegistered = GetTime();
 		//CMasternode mn(*this);
-		if(!mnodeman.CheckActiveMaster(*this))
+		//if(!mnodeman.CheckActiveMaster(*this))
+		if(!mnodeman.CheckCertificateIsExpire(*this))
 		{
 			nActiveState = MASTERNODE_NO_REGISTERED;
 			LogPrint("masternode", "CMasternode::Check -- Masternode %s is in %s state now\n", vin.prevout.ToStringShort(), GetStateString());
@@ -703,7 +712,7 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
 
 	// check if it is registered on the Ulord center server
 	CMasternode mn(*this);
-	if(!mnodeman.CheckActiveMaster(mn))
+	if(!mnodeman.CheckRegisteredMaster(mn))
 	{
 		LogPrintf("CMasternodeBroadcast::CheckOutpoint -- Failed to find Masternode in the UlordCenter's masternode list, masternode=%s\n", mn.vin.prevout.ToStringShort());
 		return false;

@@ -47,6 +47,8 @@
 #include "masternode-sync.h"
 #include "masternodeman.h"
 
+#include "script/sign.h"
+
 #include <sstream>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -1237,11 +1239,11 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn-nValueOut;
         // nModifiedFees includes any fee deltas from PrioritiseTransaction 
-	//  minTxFee  GetMinimumFee，  next step add mempool will judge pool fee
-	if(nFees<=0) 
-	{
-	   return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient nFees");
-	}    
+	    //  minTxFee  GetMinimumFee, next step add mempool will judge pool fee
+	    if(nFees<=0) 
+	    {
+	        return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient nFees");
+	    }    
         CAmount nModifiedFees = nFees;
         double nPriorityDummy = 0;
         pool.ApplyDeltas(hash, nPriorityDummy, nModifiedFees);
@@ -1274,10 +1276,10 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
 
         CAmount mempoolRejectFee = pool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
         if (mempoolRejectFee > 0 && nModifiedFees < mempoolRejectFee) {
-            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool min fee not met", false, strprintf("%d < %d", nFees, mempoolRejectFee));
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, strprintf("mempool min fee not met: (%d < %d,size=%d)", nFees, mempoolRejectFee, nSize));
         } else if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nModifiedFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(entry.GetPriority(chainActive.Height() + 1))) {
             // Require that free transactions have sufficient priority to be mined in the next block.
-            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, strprintf("insufficient priority(%ld < %ld,size=%d)",nModifiedFees,::minRelayTxFee.GetFee(nSize), nSize));
         }
 
         // Continuously rate-limit free (really, very-low-fee) transactions
@@ -1298,15 +1300,14 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
             // -limitfreerelay unit is thousand-bytes-per-minute
             // At default rate it would take over a month to fill 1GB
             if (dFreeCount >= GetArg("-limitfreerelay", DEFAULT_LIMITFREERELAY) * 10 * 1000)
-                return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "rate limited free transaction");
+                return state.DoS(0, false, REJECT_INSUFFICIENTFEE, strprintf("rate limited free transaction(%f >= %f)", dFreeCount, GetArg("-limitfreerelay", DEFAULT_LIMITFREERELAY) * 10000));
             LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
             dFreeCount += nSize;
         }
 
         if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
             return state.Invalid(false,
-                REJECT_HIGHFEE, "absurdly-high-fee",
-                strprintf("%d > %d", nFees, ::minRelayTxFee.GetFee(nSize) * 10000));
+                REJECT_HIGHFEE, strprintf("absurdly-high-fee(%d > %d)", nFees, ::minRelayTxFee.GetFee(nSize) * 10000));
 
         // Calculate in-mempool ancestors, up to a limit.
         CTxMemPool::setEntries setAncestors;
@@ -1316,7 +1317,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         size_t nLimitDescendantSize = GetArg("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT)*1000;
         std::string errString;
         if (!pool.CalculateMemPoolAncestors(entry, setAncestors, nLimitAncestors, nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, errString)) {
-            return state.DoS(0, false, REJECT_NONSTANDARD, "too-long-mempool-chain", false, errString);
+            return state.DoS(0, false, REJECT_NONSTANDARD, strprintf("too-long-mempool-chain(%s,%d)", errString, nSize));
         }
 
         // A transaction that spends outputs that would be replaced by it is invalid. Now
@@ -1584,6 +1585,15 @@ bool GetAddressIndex(uint160 addressHash, int type,
 	}
 
     return true;
+}
+
+bool GetAllAddressIndex()
+{
+	if (!fAddressIndex)
+	{
+        return error("address index not enabled");
+	}
+	return true;
 }
 
 bool GetAddressUnspent(uint160 addressHash, int type,
@@ -2649,6 +2659,118 @@ public:
     }
 };
 
+//
+#ifdef ENABLE_ADDRSTAT
+bool  g_bSqlClose=false;
+int   g_sqlblockheight = 0;
+
+ofstream * g_fout;//( "dbdata1.txt");
+int   g_filecount;
+int   g_reccount;
+
+int MyAddrDb_init()
+{
+    g_filecount=1; 
+    g_reccount=0;
+    char filepath[100]={""};
+    sprintf(filepath,"dbdata%d.txt", g_filecount);
+	std::string file = GetFilePath(filepath);
+	LogPrintf("MyAddrDb_init:new file  %s ",file );
+    g_fout= new ofstream(file.c_str());
+    
+    return 0;
+}
+
+void UpdateAddrMyDb(const int  height )
+{
+    if(g_bSqlClose==true) return;
+    if(height!=0 &&height <= g_sqlblockheight)
+    {
+        //LogPrintf("sqldb"," update addr height %d \n",g_sqlblockheight );
+      //cout << "update height height"<<g_sqlblockheight << endl;
+
+        return;
+    }
+	if(height!=g_sqlblockheight+1)
+	 {
+              LogPrintf("height check  update addr height %d %d ",height,g_sqlblockheight );
+	      cout << "update height height"<<g_sqlblockheight<< " " << height << endl;
+	      exit(1);
+	 }
+	 g_sqlblockheight=height;
+
+    if(g_reccount > 1000000 )
+    {
+        char filepath[100]={""};
+        g_filecount++;
+        sprintf(filepath,"dbdata%d.txt", g_filecount);
+		std::string file = GetFilePath(filepath);
+        LogPrintf("UpdateAddrMyDb:new file height check  update addr height %d  %s ",height,file );
+        g_fout->close();
+        delete g_fout;
+        g_fout= new  ofstream(file.c_str());
+        g_reccount=1;
+    }
+    return;
+}
+
+int my_insert(const char * pAddr , CAmount amount,int nHeight,int txIdx,int type)
+{
+    if(!g_fout->is_open())
+    {
+    	printf("file is not open\n");
+		return 0;
+    }
+    *g_fout<<pAddr<<","<<amount<<","<<nHeight<<","<<txIdx<<","<<type<<endl;
+    g_reccount++;
+    return 1;
+}
+
+void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int txIdx ,unsigned int  vIdx, int height )
+{
+    if(height!=0 &&height <= g_sqlblockheight)
+    {
+        //LogPrintf("sqldb"," update addr height %d \n",g_sqlblockheight );
+		//cout << "update height height"<<g_sqlblockheight << endl;
+
+        return;
+    }
+    txnouttype type;
+    std::vector<CTxDestination> addresses;
+    int nRequired;
+    int  nCount;
+    if(nAmount==0)return;
+    if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired)) {
+        //CScript strippedScript = StripClaimScriptPrefix(scriptPubKey);
+		//if (!ExtractDestinations(strippedScript, type, addresses, nRequired))
+		{
+        	LogPrintf("error Failed to extract %d tx %d vdx %d amount %d addr  %s  \n",height,txIdx,vIdx,nAmount, HexStr(scriptPubKey.begin(), scriptPubKey.end()).c_str() );
+			//LogPrintf("Failed to extract addr  %s  \n",HexStr(scriptPubKey.begin(), scriptPubKey.end()).c_str() );
+			cout << "Failed to extract  "<<type<<"height"<<height<<"txidx"<<txIdx  << endl;
+			cout << "hex" <<HexStr(scriptPubKey.begin(), scriptPubKey.end()) << endl;
+ 			//exit(1);
+ 		}
+    }
+	nCount=0;
+    for (const CTxDestination& addr : addresses)
+    {
+		if(nCount==0)
+            my_insert(CBitcoinAddress(addr).ToString().c_str() , nAmount,height,txIdx,type);
+    	else
+        {
+            LogPrintf("error Failed to extract multiaddr hei %d type %d  tx %d vdx %d amount %d addr  %s  \n",height,type,txIdx,vIdx,nAmount,CBitcoinAddress(addr).ToString()); 
+	    	cout <<"addr" <<nCount<<"type" <<type<<" "<< CBitcoinAddress(addr).ToString()<< endl;
+ 
+        }
+        nCount++;
+    }
+}
+#endif // ENABLE_ADDRSTAT
+//
+
+std::string GetAddrString(uint160 hash){ return CBitcoinAddress(CKeyID(hash)).ToString(); }
+
+
 // Protected by cs_main
 static ThresholdConditionCache warningcache[VERSIONBITS_NUM_BITS];
 
@@ -2835,6 +2957,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                         // and to find the amount and address from an input
                         spentIndex.push_back(make_pair(CSpentIndexKey(input.prevout.hash, input.prevout.n), CSpentIndexValue(txhash, j, pindex->nHeight, prevout.nValue, addressType, hashBytes)));
                     }
+#ifdef ENABLE_ADDRSTAT
+					AddAddrMyDbIndex(prevout.scriptPubKey,prevout.nValue * -1,i,j,pindex->nHeight);
+#endif // ENABLE_ADDRSTAT
                 }
 
             }
@@ -2984,6 +3109,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                     // record unspent output
                     addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(addressType, hashBytes, txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->nHeight)));
 				}
+#ifdef ENABLE_ADDRSTAT
+				AddAddrMyDbIndex(out.scriptPubKey,out.nValue,i,k,pindex->nHeight);
+#endif // ENABLE_ADDRSTAT
             }
         }
 
@@ -3015,6 +3143,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
+#ifdef ENABLE_ADDRSTAT
+	UpdateAddrMyDb(pindex->nHeight);
+#endif // ENABLE_ADDRSTAT
 
     assert(trieCache.incrementBlock(blockundo.insertUndo, blockundo.expireUndo, blockundo.insertSupportUndo, blockundo.expireSupportUndo, blockundo.takeoverHeightUndo));
 
@@ -3354,6 +3485,372 @@ static int64_t nTimeConnectTotal = 0;
 static int64_t nTimeFlush = 0;
 static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
+
+bool sendrawtx(CMutableTransaction & rawTx)
+{
+    LOCK(cs_main);
+
+    // parse hex string from parameter
+    CTransaction tx;
+	if (!DecodeHexTx(tx, EncodeHexTx(rawTx)))
+		return error("sendrawtx:Decode rawtx error: %s", rawTx.ToString());
+
+    uint256 hashTx = tx.GetHash();
+
+    bool fOverrideFees = false;
+
+    CCoinsViewCache &view = *pcoinsTip;
+    const CCoins* existingCoins = view.AccessCoins(hashTx);
+    bool fHaveMempool = mempool.exists(hashTx);
+    bool fHaveChain = existingCoins && existingCoins->nHeight < 1000000000;
+    if (!fHaveMempool && !fHaveChain) {
+        // push to local node and sync with wallets
+        CValidationState state;
+        bool fMissingInputs;
+        if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, false, !fOverrideFees)) {
+            if (state.IsInvalid()) {
+                return error("sendrawtx: TRANSACTION REJECTED %i: %s\n%s\n(%d)", state.GetRejectCode(), state.GetRejectReason(), tx.vin[0].prevout.ToString(), tx.vout.size());
+            } else {
+                if (fMissingInputs) {
+                    return error("sendrawtx: TRANSACTION ERROR Missing inputs\n%s\n(%d)", tx.vin[0].prevout.ToString(), tx.vout.size());
+                }
+                return error("sendrawtx: TRANSACTION ERROR %s\n%s\n(%d)", state.GetRejectReason(), tx.vin[0].prevout.ToString(), tx.vout.size());
+            }
+        }
+    } else if (fHaveChain) {
+        return error("sendrawtx: transaction already in block chain\n%s\n", hashTx.GetHex());
+    }
+
+    RelayTransaction(tx);
+
+	//LogPrintf("sendrawtx : send transaction (%s)\n", hashTx.GetHex());
+	LogPrint("fillmempool", "sendrawtx : send transaction (%s)\n", hashTx.GetHex());
+
+    return true;
+}
+
+int32_t gettotalout(CAmount inValue, size_t & nsize)
+{
+	int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
+	int64_t outtotal = (int64_t)((idlePoolSize - 300)/30);
+	nsize = 34160;
+	if(outtotal >= 1000)
+	{
+		if(inValue > 1000*COIN)
+			return 1000;
+		else if(inValue > COIN)
+			return inValue / COIN;
+		else if(inValue == COIN)
+			return 10;
+		else if(inValue >= 0.01 * COIN)
+		{
+			nsize = 226;
+			return 2;
+		}
+		else
+		{
+			nsize = 200;
+			return 1;
+		}
+	}
+	else if(outtotal > 1)
+	{
+		if(inValue > COIN)
+			return std::min(inValue / COIN, outtotal);
+		else if(inValue == COIN)
+			return 10 <= outtotal ? 10 : outtotal;
+		else if(inValue >= 0.01 * COIN)
+		{
+			nsize = 226;
+			return 2;
+		}
+		else
+		{
+			nsize = 200;
+			return 1;
+		}
+	}
+	if(inValue >= 0.01 * COIN)
+	{
+		nsize = 226;
+		return 2;
+	}
+	else
+	{
+		nsize = 200;
+		return 1;
+	}
+}
+
+bool createrawtx(CMutableTransaction & rawTx, const COutput& out, const std::vector<string> & addrList, CAmount & fee)
+{
+
+	//txin
+    rawTx.nLockTime = chainActive.Height();
+	uint32_t nSequence = (rawTx.nLockTime ? std::numeric_limits<uint32_t>::max() - 1 : std::numeric_limits<uint32_t>::max());
+    CTxIn in(COutPoint(out.tx->GetHash(), out.i), CScript(), nSequence);
+
+    rawTx.vin.push_back(in);
+
+	//calc vout size & out amount
+	CAmount inValue = out.tx->vout[out.i].nValue;
+	//int64_t idlePoolSize = (int64_t)GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 - (int64_t)mempool.GetTotalTxSize();
+	//int64_t outtotal = (int64_t)((idlePoolSize - 300)/30);
+	size_t txsize = 0;
+	int32_t outcount = gettotalout(inValue, txsize);
+	CAmount noutAmount = 0;
+	fee = std::max(mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(txsize), (CAmount)1);
+	if(fee < ::minRelayTxFee.GetFee(txsize))
+		fee = ::minRelayTxFee.GetFee(txsize);
+	
+	noutAmount = (CAmount)(inValue/outcount);
+	
+	//txout
+	CAmount outValue = 0;
+    std::set<CBitcoinAddress> setAddress;
+    BOOST_FOREACH(const string& name_, addrList) {
+
+        CBitcoinAddress address(name_);
+        if (!address.IsValid())
+            return error("createrawtx:Invalid Ulord address: %s", name_);
+
+        if (setAddress.count(address))
+            continue;
+        setAddress.insert(address);
+
+        CScript scriptPubKey = GetScriptForDestination(address.Get());
+		
+		if(outValue + noutAmount >= inValue)
+		{
+			CAmount amount = inValue - outValue - fee;
+			if(amount > 0)
+			{
+				CTxOut out(amount, scriptPubKey);
+				rawTx.vout.push_back(out);
+			}
+			break;
+		}
+		outValue += noutAmount;
+
+        CTxOut out(noutAmount, scriptPubKey);
+        rawTx.vout.push_back(out);
+    }
+
+	/*if (!DecodeHexTx(tx, EncodeHexTx(rawTx)))
+		return error("createrawtx:Decode rawtx error: %s", rawTx.ToString().c_str());*/
+
+    return true;
+}
+
+#ifdef ENABLE_WALLET
+
+bool GetAddressList(std::vector<string> & addrList)
+{
+	LOCK2(cs_main, pwalletMain->cs_wallet);
+
+	BOOST_FOREACH(set<CTxDestination> grouping, pwalletMain->GetAddressGroupings())
+        BOOST_FOREACH(CTxDestination address, grouping)
+            addrList.push_back(CBitcoinAddress(address).ToString());
+
+	if(addrList.size() < 1000)
+	{
+		for(int i = addrList.size(); i < 1000; i++)
+		{
+			std::string strAccount;
+
+		    if (!pwalletMain->IsLocked(true))
+		        pwalletMain->TopUpKeyPool();
+
+		    // Generate a new key that is added to wallet
+		    CPubKey newKey;
+		    if (!pwalletMain->GetKeyFromPool(newKey))
+		    {
+			    // 0 is interpreted by TopUpKeyPool() as the default keypool size given by -keypool
+			    unsigned int kpSize = 0;
+			    if (1000 - i > 100) {
+			        kpSize = 1000 - i;
+			    }
+
+			    if (pwalletMain->IsLocked())
+					return error("GetAddressList: wallet is locked.\n");
+				
+			    pwalletMain->TopUpKeyPool(kpSize);
+
+			    if (pwalletMain->GetKeyPoolSize() < kpSize)
+			        return error("GetAddressList: Error refreshing keypool.\n");
+				if (!pwalletMain->GetKeyFromPool(newKey))
+					return error("GetAddressList: Error Generate a new key.\n");
+		    }
+		    CKeyID keyID = newKey.GetID();
+
+		    pwalletMain->SetAddressBook(keyID, strAccount, "receive");
+			addrList.push_back(CBitcoinAddress(keyID).ToString());
+		}
+	}
+	return true;
+}
+
+bool signrawTX(CMutableTransaction & mergedTx, const CBasicKeyStore & basickeystore)
+{
+	LOCK(cs_main);
+
+    // Fetch previous transactions (inputs):
+    CCoinsView viewDummy;
+    CCoinsViewCache view(&viewDummy);
+    {
+        LOCK(mempool.cs);
+        CCoinsViewCache &viewChain = *pcoinsTip;
+        CCoinsViewMemPool viewMempool(&viewChain, mempool);
+        view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
+
+        BOOST_FOREACH(const CTxIn& txin, mergedTx.vin) {
+            const uint256& prevHash = txin.prevout.hash;
+            CCoins coins;
+            view.AccessCoins(prevHash); // this is certainly allowed to fail
+        }
+
+        view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
+    }
+
+    //bool fGivenKeys = false;
+
+    const CKeyStore& keystore = basickeystore;
+
+    int nHashType = SIGHASH_ALL;
+    bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
+
+    // Sign what we can:
+    for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
+        CTxIn& txin = mergedTx.vin[i];
+        const CCoins* coins = view.AccessCoins(txin.prevout.hash);
+        if (coins == NULL || !coins->IsAvailable(txin.prevout.n)) {
+            return error("signrawTX:Input not found or already spent.\n%s", txin.ToString());
+        }
+        const CScript& prevPubKey = coins->vout[txin.prevout.n].scriptPubKey;
+
+        txin.scriptSig.clear();
+        // Only sign SIGHASH_SINGLE if there's a corresponding output:
+        if (!fHashSingle || (i < mergedTx.vout.size()))
+            SignSignature(keystore, prevPubKey, mergedTx, i, nHashType);
+
+        // ... and merge in other signatures:
+        std::vector<CMutableTransaction> txVariants;
+		txVariants.push_back(mergedTx);
+        BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
+            txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
+        }
+        ScriptError serror = SCRIPT_ERR_OK;
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&mergedTx, i), &serror)) {
+            return error("signrawTX: VerifyScript error, %d\n", serror);
+        }
+    }
+
+    return true;
+}
+
+bool Enoughrawtx(unsigned int nSize, CAmount fee, CAmount & addfee)
+{
+	CAmount mempoolRejectFee = mempool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
+	CAmount rateRejectFee = ::minRelayTxFee.GetFee(nSize);
+    if (mempoolRejectFee > 0 && fee < mempoolRejectFee) {
+		addfee = mempoolRejectFee - fee;
+		return false;
+    }else if (fee < rateRejectFee) {
+		addfee = rateRejectFee - fee;
+		return false;
+    }
+    return true;
+}
+
+bool Checkrawtx(CMutableTransaction & rawTx,const CTransaction & tx, CAmount & fee)
+{
+	unsigned int txsize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+	//CCoinsView dummy;
+    //CCoinsViewCache view(&dummy);
+	//CAmount fee = view.GetValueIn(tx) - tx.GetValueOut();
+	CAmount needmore = 0;
+
+	if(!Enoughrawtx(txsize, fee, needmore))
+	{
+		int last = rawTx.vout.size() - 1;
+		int outVal = rawTx.vout[last].nValue;
+		if(outVal > needmore)
+		{
+			fee += needmore;
+			rawTx.vout[last].nValue = outVal - needmore;
+		}
+		else
+		{
+			fee += outVal;
+			rawTx.vout.pop_back();
+		}
+		return false;
+	}
+	return true;
+}
+
+#ifdef ENABLE_MEMPOOLTEST
+/*Thread for test to fill the mempool*/
+void ThreadTestFillMemPool()
+{
+	static bool fOneThread;
+    if(fOneThread) return;
+    fOneThread = true;
+
+	RenameThread("test-txmempool");
+
+	std::vector<string> addrList;
+	if(!GetAddressList(addrList))
+	{
+		printf("ThreadTestFillMemPool start failed, addrlist number is %ld\n", addrList.size());
+		return;
+	}
+
+	LogPrintf("ThreadTestFillMemPool : start!\n");
+
+	while(true)
+	{
+		MilliSleep(1000*60);
+		if(masternodeSync.IsBlockchainSynced() && !ShutdownRequested())
+		{
+			std::vector<COutput> vCoins;
+			pwalletMain->AvailableCoins(vCoins);
+
+			if(vCoins.empty())
+				continue;
+			
+			LogPrintf("ThreadTestFillMemPool : %ld coins to spent \n", vCoins.size());
+			
+			BOOST_FOREACH(const COutput& out, vCoins)
+			{
+				if(out.tx->vout[out.i].nValue < CENT || out.nDepth < 1) continue;
+
+				//CTransaction newtx;
+				CMutableTransaction rawTx;
+				CAmount txFee = 0;
+				bool IsOK = false;
+				if(!createrawtx(rawTx, out, addrList, txFee))
+					continue;
+				while(!IsOK) {
+					if(!signrawTX(rawTx, *pwalletMain))
+						break;
+					CTransaction tx;
+					if (!DecodeHexTx(tx, EncodeHexTx(rawTx))) {
+						LogPrintf("ThreadTestFillMemPool:sendrawtx:Decode rawtx error: %s", rawTx.ToString());
+						break;
+					}
+					IsOK = Checkrawtx(rawTx, tx, txFee);
+				}
+				if(!IsOK)
+					continue;
+				sendrawtx(rawTx);
+			}
+		}
+	}
+}
+#endif //ENABLE_MEMPOOLTEST
+
+#endif // ENABLE_WALLET
 
 /**
  * Connect a new block to chainActive. pblock is either NULL or a pointer to a CBlock

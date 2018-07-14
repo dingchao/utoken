@@ -125,6 +125,7 @@ void CPrivSendPool::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataS
 
         // if the queue is ready, submit if we can
         if(dsq.fReady) {
+#ifdef ENABLE_WALLET
             if(!pSubmittedToMasternode) return;
             if((CNetAddr)pSubmittedToMasternode->addr != (CNetAddr)pmn->addr) {
                 LogPrintf("DSQUEUE -- message doesn't match current Masternode: pSubmittedToMasternode=%s, addr=%s\n", pSubmittedToMasternode->addr.ToString(), pmn->addr.ToString());
@@ -135,6 +136,7 @@ void CPrivSendPool::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataS
                 LogPrint("privatesend", "DSQUEUE -- PrivateSend queue (%s) is ready on masternode %s\n", dsq.ToString(), pmn->addr.ToString());
                 SubmitDenominate();
             }
+#endif // ENABLE_WALLET
         } else {
             BOOST_FOREACH(CPrivSendQueue q, vecPrivSendQueue) {
                 if(q.vin == dsq.vin) {
@@ -272,7 +274,7 @@ void CPrivSendPool::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataS
             PushStatus(pfrom, STATUS_REJECTED, nMessageID);
             SetNull();
         }
-
+#ifdef ENABLE_WALLET
     } else if(strCommand == NetMsgType::DSSTATUSUPDATE) {
 
         if(pfrom->nVersion < MIN_PRIVATESEND_PEER_PROTO_VERSION) {
@@ -322,7 +324,7 @@ void CPrivSendPool::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataS
         if(!CheckPoolStateUpdate(PoolState(nMsgState), nMsgEntriesCount, PoolStatusUpdate(nMsgStatusUpdate), PoolMessage(nMsgMessageID), nMsgSessionID)) {
             LogPrint("privatesend", "DSSTATUSUPDATE -- CheckPoolStateUpdate failed\n");
         }
-
+#endif // ENABLE_WALLET
     } else if(strCommand == NetMsgType::DSSIGNFINALTX) {
 
         if(pfrom->nVersion < MIN_PRIVATESEND_PEER_PROTO_VERSION) {
@@ -354,7 +356,7 @@ void CPrivSendPool::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataS
         }
         // all is good
         CheckPool();
-
+#ifdef ENABLE_WALLET
     } else if(strCommand == NetMsgType::DSFINALTX) {
 
         if(pfrom->nVersion < MIN_PRIVATESEND_PEER_PROTO_VERSION) {
@@ -422,6 +424,7 @@ void CPrivSendPool::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataS
         LogPrint("privatesend", "DSCOMPLETE -- nMsgSessionID %d  nMsgMessageID %d (%s)\n", nMsgSessionID, nMsgMessageID, GetMessageByID(PoolMessage(nMsgMessageID)));
 
         CompletedTransaction(PoolMessage(nMsgMessageID));
+#endif // ENABLE_WALLET
     }
 }
 
@@ -449,6 +452,7 @@ void CPrivSendPool::InitDenominations()
     */
 }
 
+#ifdef ENABLE_WALLET
 void CPrivSendPool::ResetPool()
 {
     nCachedLastSuccessBlock = 0;
@@ -457,6 +461,7 @@ void CPrivSendPool::ResetPool()
     UnlockCoins();
     SetNull();
 }
+#endif // ENABLE_WALLET
 
 void CPrivSendPool::SetNull()
 {
@@ -483,6 +488,7 @@ void CPrivSendPool::SetNull()
 //
 void CPrivSendPool::UnlockCoins()
 {
+#ifdef ENABLE_WALLET
     while(true) {
         TRY_LOCK(pwalletMain->cs_wallet, lockWallet);
         if(!lockWallet) {MilliSleep(50); continue;}
@@ -492,6 +498,7 @@ void CPrivSendPool::UnlockCoins()
     }
 
     vecOutPointLocked.clear();
+#endif // ENABLE_WALLET	
 }
 
 std::string CPrivSendPool::GetStateString() const
@@ -582,7 +589,9 @@ void CPrivSendPool::CheckPool()
     // reset if we're here for 10 seconds
     if((nState == POOL_STATE_ERROR || nState == POOL_STATE_SUCCESS) && GetTimeMillis() - nTimeLastSuccessfulStep >= 10000) {
         LogPrint("privatesend", "CPrivSendPool::CheckPool -- timeout, RESETTING\n");
+#ifdef ENABLE_WALLET
         UnlockCoins();
+#endif // ENABLE_WALLET
         SetNull();
     }
 }
@@ -796,6 +805,7 @@ void CPrivSendPool::CheckTimeout()
 
     if(!fEnablePrivateSend && !fMasterNode) return;
 
+#ifdef ENABLE_WALLET
     // catching hanging sessions
     if(!fMasterNode) {
         switch(nState) {
@@ -811,6 +821,7 @@ void CPrivSendPool::CheckTimeout()
                 break;
         }
     }
+#endif
 
     int nLagTime = fMasterNode ? 0 : 10000; // if we're the client, give the server a few extra seconds before resetting.
     int nTimeout = (nState == POOL_STATE_SIGNING) ? PRIVATESEND_SIGNING_TIMEOUT : PRIVATESEND_QUEUE_TIMEOUT;
@@ -1042,6 +1053,7 @@ bool CPrivSendPool::IsSignaturesComplete()
     return true;
 }
 
+#ifdef ENABLE_WALLET
 //
 // Execute a mixing denomination via a Masternode.
 // This is only ran from clients
@@ -1251,6 +1263,7 @@ bool CPrivSendPool::SignFinalTransaction(const CTransaction& finalTransactionNew
 
     return true;
 }
+#endif // ENABLE_WALLET
 
 void CPrivSendPool::NewBlock()
 {
@@ -1264,6 +1277,7 @@ void CPrivSendPool::NewBlock()
     CheckTimeout();
 }
 
+#ifdef ENABLE_WALLET
 // mixing transaction was completed (failed or successful)
 void CPrivSendPool::CompletedTransaction(PoolMessage nMessageID)
 {
@@ -1987,6 +2001,7 @@ bool CPrivSendPool::CreateDenominated(const CompactTallyItem& tallyItem, bool fC
 
     return true;
 }
+#endif // ENABLE_WALLET
 
 bool CPrivSendPool::IsOutputsCompatibleWithSessionDenom(const std::vector<CTxPSOut>& vecTxPSOut)
 {
@@ -2469,8 +2484,9 @@ void ThreadCheckPrivSendPool()
     RenameThread("ulord-privatesend");
 
     unsigned int nTick = 0;
+#ifdef ENABLE_WALLET
     unsigned int nDoAutoNextRun = nTick + PRIVATESEND_AUTO_TIMEOUT_MIN;
-
+#endif // ENABLE_WALLET
     while (true)
     {
         MilliSleep(1000);
@@ -2499,11 +2515,12 @@ void ThreadCheckPrivSendPool()
 
             privSendPool.CheckTimeout();
             privSendPool.CheckForCompleteQueue();
-
+#ifdef ENABLE_WALLET
             if(nDoAutoNextRun == nTick) {
                 privSendPool.DoAutomaticDenominating();
                 nDoAutoNextRun = nTick + PRIVATESEND_AUTO_TIMEOUT_MIN + GetRandInt(PRIVATESEND_AUTO_TIMEOUT_MAX - PRIVATESEND_AUTO_TIMEOUT_MIN);
             }
+#endif // ENABLE_WALLET
         }
     }
 }

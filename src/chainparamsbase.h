@@ -8,6 +8,9 @@
 #include <string>
 #include <vector>
 
+#define ENABLE_MNTEST = 1
+//#define ENABLE_MEMPOOLTEST = 1
+
 /**
  * CBaseChainParams defines the base parameters (shared between ulord-cli and ulordd)
  * of a given instance of the Ulord system.

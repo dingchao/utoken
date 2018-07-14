@@ -144,7 +144,18 @@ UniValue getblockcount(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    return chainActive.Height();
+	UniValue result(UniValue::VOBJ);
+	result.push_back(Pair("height", chainActive.Height()));
+	int nBlockHeight = chainActive.Height();
+	while(true)
+	{
+		if( nBlockHeight >= Params().GetConsensus().nSuperblockStartBlock &&
+            ((nBlockHeight % Params().GetConsensus().nSuperblockCycle) == 0) )
+			break;
+		nBlockHeight++;
+	}
+	result.push_back(Pair("next superBlock", nBlockHeight));
+    return result;
 }
 
 UniValue getbestblockhash(const UniValue& params, bool fHelp)
@@ -962,6 +973,23 @@ UniValue mempoolInfoToJSON()
     return ret;
 }
 
+
+UniValue mempoolInfoToJSON(size_t nSize)
+{
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("size", (int64_t) mempool.size()));
+    ret.push_back(Pair("bytes", (int64_t) mempool.GetTotalTxSize()));
+    ret.push_back(Pair("usage", (int64_t) mempool.DynamicMemoryUsage()));
+    size_t maxmempool = GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
+    ret.push_back(Pair("maxmempool", (int64_t) maxmempool));
+    ret.push_back(Pair("mempoolminfee 1", ValueFromAmount(mempool.GetMinFee(maxmempool).GetFee(nSize))));
+	ret.push_back(Pair("mempoolminfee 100", ValueFromAmount(mempool.GetMinFee(maxmempool).GetFee(100))));
+	ret.push_back(Pair("mempoolminfee 1000", ValueFromAmount(mempool.GetMinFee(maxmempool).GetFeePerK())));
+	ret.push_back(Pair("relaypriority", ValueFromAmount(CFeeRate(DEFAULT_MIN_RELAY_TX_FEE).GetFee(nSize))));
+
+    return ret;
+}
+
 UniValue getmempoolinfo(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -981,7 +1009,11 @@ UniValue getmempoolinfo(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getmempoolinfo", "")
         );
 
-    return mempoolInfoToJSON();
+	int64_t	size = 1;
+
+	mempool.GetMinFeeInfo();
+
+    return mempoolInfoToJSON((size_t)size);
 }
 
 UniValue invalidateblock(const UniValue& params, bool fHelp)

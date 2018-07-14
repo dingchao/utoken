@@ -182,6 +182,7 @@ extern UniValue getaddressutxos(const UniValue& params, bool fHelp);
 extern UniValue getaddressdeltas(const UniValue& params, bool fHelp);
 extern UniValue getaddresstxids(const UniValue& params, bool fHelp);
 extern UniValue getaddressbalance(const UniValue& params, bool fHelp);
+extern UniValue getaddressindex(const UniValue& params, bool fHelp);
 
 extern UniValue getpeerinfo(const UniValue& params, bool fHelp);
 extern UniValue ping(const UniValue& params, bool fHelp);
@@ -333,6 +334,7 @@ extern UniValue getclaimsfortx(const UniValue& params, bool fHelp);
 extern UniValue proofToJSON(const CClaimTrieProof& proof);
 extern UniValue getnameproof(const UniValue& params, bool fHelp);
 
+#ifdef ENABLE_WALLET
 /*nametrie*/
 extern UniValue nametrie(const UniValue& params, bool fHelp);    //in rpcwallet.cpp
 extern void UpdateNameTrie(const std::vector<unsigned char>vchName, const uint160 claimId, const std::vector<unsigned char>vchValue, CAmount nAmount, CWalletTx& wtxNew, CWalletTx wtxIn, unsigned int nTxOut);
@@ -348,6 +350,7 @@ extern UniValue crosschainredeem(const UniValue &params, bool fHelp);
 extern UniValue crosschainrefund(const UniValue &params, bool fHelp);
 extern UniValue crosschainextractsecret(const UniValue &params, bool fHelp);
 extern UniValue crosschainauditcontract(const UniValue &params, bool fHelp);
+#endif // ENABLE_WALLET
 
 
 bool StartRPC();

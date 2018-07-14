@@ -160,6 +160,7 @@ UniValue mnsync(const UniValue& params, bool fHelp)
         objStatus.push_back(Pair("IsWinnersListSynced", masternodeSync.IsWinnersListSynced()));
         objStatus.push_back(Pair("IsSynced", masternodeSync.IsSynced()));
         objStatus.push_back(Pair("IsFailed", masternodeSync.IsFailed()));
+		objStatus.push_back(Pair("pCurrentBlockIndex", masternodeSync.GetCurrentBlockId()));
         return objStatus;
     }
 
@@ -986,4 +987,40 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
 
     return obj;
 }
+
+UniValue getaddressindex(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getaddressindex\n"
+            "\nReturns the balance for all address(es) (requires addressindex to be enabled).\n"
+            "\nArguments:\n"
+            "{\n"
+            "}\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"balance\"  (string) The current balance in satoshis\n"
+            "  \"received\"  (string) The total number of satoshis received (including change)\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getaddressbalance", "")
+            + HelpExampleRpc("getaddressbalance", "")
+        );
+
+    //CAmount balance = 0;
+    //CAmount received = 0;
+	UniValue result(UniValue::VOBJ);
+
+	if(!GetAllAddressIndex())
+	{
+		result.push_back(Pair("result", "requires addressindex to be enabled"));
+        return result;
+	}
+
+	result.push_back(Pair("result", "to be add ..."));
+
+    return result;
+
+}
+
 

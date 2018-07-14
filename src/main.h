@@ -728,6 +728,7 @@ bool GetAddressIndex(uint160 addressHash, int type,
                      int start = 0, int end = 0);
 bool GetAddressUnspent(uint160 addressHash, int type,
                        std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs);
+bool GetAllAddressIndex();
 
 /** Functions for disk access for blocks */
 bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);
@@ -874,4 +875,15 @@ static const unsigned int REJECT_ALREADY_KNOWN = 0x101;
 /** Transaction conflicts with a transaction already known */
 static const unsigned int REJECT_CONFLICT = 0x102;
 
+#ifdef ENABLE_WALLET
+#ifdef ENABLE_MEMPOOLTEST
+void ThreadTestFillMemPool();
+#endif //ENABLE_MEMPOOLTEST
+#endif // ENABLE_WALLET
+#ifdef ENABLE_ADDRSTAT
+int MyAddrDb_init();
+void UpdateAddrMyDb(const int  height );
+void AddAddrMyDbIndex(const CScript& scriptPubKey, CAmount nAmount, unsigned int txIdx ,unsigned int  vIdx, int height );
+#endif // ENABLE_ADDRSTAT
+std::string GetAddrString(uint160 hash);
 #endif // BITCOIN_MAIN_H

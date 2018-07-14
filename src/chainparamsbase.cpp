@@ -32,7 +32,11 @@ class CBaseMainParams : public CBaseChainParams
 public:
     CBaseMainParams()
     {
+#ifdef ENABLE_MNTEST
+		nRPCPort = 9207;
+#else
         nRPCPort = 9889;
+#endif // ENABLE_MNTEST
     }
 };
 static CBaseMainParams mainParams;

@@ -77,6 +77,7 @@ public:
 
     int GetAssetID() { return nRequestedMasternodeAssets; }
     int GetAttempt() { return nRequestedMasternodeAttempt; }
+	int GetCurrentBlockId() { return pCurrentBlockIndex == NULL ? 0 : pCurrentBlockIndex->nHeight; }
     std::string GetAssetName();
     std::string GetSyncStatus();
 

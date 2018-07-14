@@ -349,9 +349,9 @@ private:
 
     void CreateFinalTransaction();
     void CommitFinalTransaction();
-
+#ifdef ENABLE_WALLET
     void CompletedTransaction(PoolMessage nMessageID);
-
+#endif // ENABLE_WALLET
     /// Get the denominations for a specific amount of ulord.
     int GetDenominationsByAmounts(const std::vector<CAmount>& vecAmount);
 
@@ -380,6 +380,7 @@ private:
         return std::find(vecDenominationsSkipped.begin(), vecDenominationsSkipped.end(), nDenomValue) != vecDenominationsSkipped.end();
     }
 
+#ifdef ENABLE_WALLET    
     /// Create denominations
     bool CreateDenominated();
     bool CreateDenominated(const CompactTallyItem& tallyItem, bool fCreateMixingCollaterals);
@@ -397,11 +398,13 @@ private:
 
     /// Get Masternode updates about the progress of mixing
     bool CheckPoolStateUpdate(PoolState nStateNew, int nEntriesCountNew, PoolStatusUpdate nStatusUpdate, PoolMessage nMessageID, int nSessionIDNew=0);
+#endif // ENABLE_WALLET
     // Set the 'state' value, with some logging and capturing when the state changed
     void SetState(PoolState nStateNew);
-
+#ifdef ENABLE_WALLET
     /// As a client, check and sign the final transaction
     bool SignFinalTransaction(const CTransaction& finalTransactionNew, CNode* pnode);
+#endif // ENABLE_WALLET
 
     /// Relay mixing Messages
     void RelayFinalTransaction(const CTransaction& txFinal);
@@ -455,9 +458,10 @@ public:
 
     void SetMinBlockSpacing(int nMinBlockSpacingIn) { nMinBlockSpacing = nMinBlockSpacingIn; }
 
+#ifdef ENABLE_WALLET
     void ResetPool();
-
-    void UnlockCoins();
+#endif // ENABLE_WALLET
+	void UnlockCoins();
 
     int GetQueueSize() const { return vecPrivSendQueue.size(); }
     int GetState() const { return nState; }
@@ -466,8 +470,10 @@ public:
 
     int GetEntriesCount() const { return vecEntries.size(); }
 
+#ifdef ENABLE_WALLET
     /// Passively run mixing in the background according to the configuration in settings
     bool DoAutomaticDenominating(bool fDryRun=false);
+#endif // ENABLE_WALLET
 
     void CheckTimeout();
     void CheckForCompleteQueue();

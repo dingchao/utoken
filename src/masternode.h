@@ -285,6 +285,7 @@ public:
     bool IsWatchdogExpired() { return nActiveState == MASTERNODE_WATCHDOG_EXPIRED; }
     bool IsNewStartRequired() { return nActiveState == MASTERNODE_NEW_START_REQUIRED; }
 	bool IsRegistered() { return nActiveState == MASTERNODE_NO_REGISTERED; }
+	bool IsLocalcomflict();
 
 	void SetRegisteredCheckInterval(int time) { MNM_REGISTERED_CHECK_SECONDS = time * 60; }
 
@@ -404,9 +405,11 @@ public:
         return ss.GetHash();
     }
 
+#ifdef ENABLE_WALLET
     /// Create Masternode broadcast, needs to be relayed manually after that
     static bool Create(CTxIn vin, CService service, CKey keyCollateralAddressNew, CPubKey pubKeyCollateralAddressNew, CKey keyMasternodeNew, CPubKey pubKeyMasternodeNew, std::string &strErrorRet, CMasternodeBroadcast &mnbRet);
     static bool Create(std::string strService, std::string strKey, std::string strTxHash, std::string strOutputIndex, std::string& strErrorRet, CMasternodeBroadcast &mnbRet, bool fOffline = false);
+#endif // ENABLE_WALLET
 
     bool SimpleCheck(int& nDos);
     bool Update(CMasternode* pmn, int& nDos);

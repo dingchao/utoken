@@ -551,7 +551,7 @@ void CMasternodeMan::CheckAndRemove()
             CMasternodeBroadcast mnb = CMasternodeBroadcast(*it);
             uint256 hash = mnb.GetHash();
             // If collateral was spent ...
-            if ((*it).IsOutpointSpent() || (*it).IsRegistered()) {
+            if ((*it).IsOutpointSpent() || (*it).IsRegistered() || (*it).IsLocalcomflict()) {
                 LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Removing Masternode: %s  addr=%s  %i now\n", (*it).GetStateString(), (*it).addr.ToString(), size() - 1);
 
                 // erase all of the broadcasts we've seen from this txin, ...
@@ -942,8 +942,8 @@ CMasternode* CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlockHeight
     sort(vecMasternodeLastPaid.begin(), vecMasternodeLastPaid.end(), CompareLastPaidBlock());
 
     uint256 blockHash;
-    if(!GetBlockHash(blockHash, nBlockHeight - 101)) {
-        LogPrintf("CMasternode::GetNextMasternodeInQueueForPayment -- ERROR: GetBlockHash() failed at nBlockHeight %d\n", nBlockHeight - 101);
+    if(!GetBlockHash(blockHash, nBlockHeight - (Params().GetConsensus().nMasternodePaymentsStartBlock + 1))) {
+        LogPrintf("CMasternode::GetNextMasternodeInQueueForPayment -- ERROR: GetBlockHash() failed at nBlockHeight %d\n", nBlockHeight - (Params().GetConsensus().nMasternodePaymentsStartBlock + 1));
         return NULL;
     }
     // Look at 1/10 of the oldest nodes (by last payment), calculate their scores and pay the best one

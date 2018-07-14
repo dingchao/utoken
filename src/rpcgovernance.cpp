@@ -741,6 +741,7 @@ UniValue gobject(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Unknown governance object");
 
         // REPORT BASIC OBJECT STATS
+        pGovObj->UpdateSentinelVariables();
 
         UniValue objResult(UniValue::VOBJ);
         objResult.push_back(Pair("DataHex",  pGovObj->GetDataAsHex()));

@@ -324,6 +324,11 @@ void CMasternode::Check(bool fForce)
     }
 }
 
+bool CMasternode::IsLocalcomflict()
+{
+	return fMasterNode && activeMasternode.pubKeyMasternode == pubKeyMasternode ? activeMasternode.vin != vin : false;
+}
+
 bool CMasternode::IsValidNetAddr()
 {
     return IsValidNetAddr(addr);
@@ -443,6 +448,7 @@ void CMasternode::UpdateLastPaid(const CBlockIndex *pindex, int nMaxBlocksToScan
     // LogPrint("masternode", "CMasternode::UpdateLastPaidBlock -- searching for block with payment to %s -- keeping old %d\n", vin.prevout.ToStringShort(), nBlockLastPaid);
 }
 
+#ifdef ENABLE_WALLET
 bool CMasternodeBroadcast::Create(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string& strErrorRet, CMasternodeBroadcast &mnbRet, bool fOffline)
 {
     CTxIn txin;
@@ -524,6 +530,7 @@ bool CMasternodeBroadcast::Create(CTxIn txin, CService service, CKey keyCollater
 
     return true;
 }
+#endif // ENABLE_WALLET
 
 bool CMasternodeBroadcast::SimpleCheck(int& nDos)
 {

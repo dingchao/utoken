@@ -423,7 +423,7 @@ bool CMasternodeMan::CheckActiveMaster(CMasternode &mn)
 		}
 		//转换为时间戳
 		struct tm tmp_time;
-		strftime(strLastTime.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
+		strptime(strLastTime.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
 		time_t t = mktime(&tmp_time);
 		LogPrintf("CMasternodeMan::CheckActiveMaster -- strLastTime = %ld\n",t);
 		

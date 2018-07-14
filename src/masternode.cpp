@@ -832,8 +832,11 @@ CMasternodePing::CMasternodePing(CTxIn& vinNew)
     sigTime = GetAdjustedTime();
 	
 	CMasternode* pmn = mnodeman.Find(vin);
-	validTimes = pmn.validTimes;
-	certificate = pmn.certificate;
+	if(pmn)
+	{
+	    validTimes = pmn->validTimes;
+	    certificate = pmn->certificate;
+	}
     vchSig = std::vector<unsigned char>();
 }
 

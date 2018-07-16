@@ -208,8 +208,8 @@ bool VerifymsnRes(const CMasternode &mn)
 	CBitcoinAddress address(mn.pubKeyCollateralAddress.GetID());
 		
 	CHashWriter ss(SER_GETHASH, 0);
-    ss << strMessageMagic;
-    ss << mn.vin.prevout.hash;
+        ss << strMessageMagic;
+        ss << mn.vin.prevout.hash.ToString().substr(0,64);
 	ss << mn.vin.prevout.n;
 	//ss << qst.addr.ToString();
 	ss << address.ToString();
@@ -342,6 +342,7 @@ CMasternodeMan::CMasternodeMan()
 				  }
 				  mn.validTimes = mstnode._validTimes;
 				  mn.certificate = mstnode._certificate;
+				  LogPrintf("CMasternodeMan::CheckActiveMaster: MasterNode certificate %s time = %d\n", mstnode._certificate, mstnode._validTimes);
 				  vecnode.push_back(mstnode);
 			  	  if(!VerifymsnRes(mn))
 				  {

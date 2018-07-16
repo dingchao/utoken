@@ -478,12 +478,13 @@ private:
     {  
         ar & _version;  
         ar & _masteraddr;  
-        //ar & _txid;  
+        ar & _txid;  
+	ar & _outid;
         ar & _hostname;  
         ar & _hostip;  
         ar & _validflag;
-		ar & _validTimes;
-		ar & _certificate;
+	ar & _validTimes;
+	ar & _certificate;
         //ar & _llAmount;  
     }  
 /*addr char(50) not null primary key,
@@ -514,19 +515,22 @@ public:
         _hostname  = b._hostname;
         _hostip    = b._hostip;
         _validflag = b._validflag;
-		_certificate = b._certificate;
-		_validTimes = b._validTimes;
+	_certificate = b._certificate;
+	_validTimes = b._validTimes;
+	_txid      = b._txid;
+	_outid     = b._outid;
         return * this;
     }
 public:  
     int _version;  
     std::string _masteraddr; // node addr
     std::string _txid;      //  
+    int         _outid;      //
     std::string _hostname;  // 
     std::string _hostip;    // 
     int         _validflag; //	
-	std::string _certificate; //证书
-	int64_t _validTimes;  //注册有效时间
+    std::string _certificate; //证书
+    int64_t _validTimes;  //注册有效时间
     int         _time;
     long long   _llAmount;  // 
     std::string _text;  

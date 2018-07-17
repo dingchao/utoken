@@ -19,7 +19,7 @@ CMasternodeMan mnodeman;
 CService ucenterservice;
 
 const std::string CMasternodeMan::SERIALIZATION_VERSION_STRING = "CMasternodeMan-Version-4";
-const int mstnd_iReqBufLen = 500;
+const int mstnd_iReqBufLen = 600;
 const int mstnd_iReqMsgHeadLen = 4;
 const int mstnd_iReqMsgTimeout = 10;
 const std::string mstnd_SigPubkey = "03e867486ebaeeadda25f1e47612cdaad3384af49fa1242c5821b424937f8ec1f5";

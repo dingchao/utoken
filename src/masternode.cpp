@@ -310,7 +310,7 @@ void CMasternode::Check(bool fForce)
 		nTimeLastCheckedRegistered = GetTime();
 		//CMasternode mn(*this);
 		//if(!mnodeman.CheckActiveMaster(*this))
-		if(!mnodeman.CheckCertificateIsExpire(*this))
+		if(mnodeman.CheckCertificateIsExpire(*this))
 		{
 			nActiveState = MASTERNODE_NO_REGISTERED;
 			LogPrint("masternode", "CMasternode::Check -- Masternode %s is in %s state now\n", vin.prevout.ToStringShort(), GetStateString());

@@ -208,6 +208,8 @@ public:
         READWRITE(pubKeyMasternode);
         READWRITE(lastPing);
         READWRITE(vchSig);
+	READWRITE(certificate);
+	READWRITE(validTimes);
         READWRITE(sigTime);
         READWRITE(nLastDsq);
         READWRITE(nTimeLastChecked);
@@ -238,6 +240,8 @@ public:
         swap(first.pubKeyMasternode, second.pubKeyMasternode);
         swap(first.lastPing, second.lastPing);
         swap(first.vchSig, second.vchSig);
+	swap(first.certificate, second.certificate);
+	swap(first.validTimes, second.validTimes);
         swap(first.sigTime, second.sigTime);
         swap(first.nLastDsq, second.nLastDsq);
         swap(first.nTimeLastChecked, second.nTimeLastChecked);

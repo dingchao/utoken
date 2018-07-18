@@ -31,6 +31,7 @@ class CMasternodePing
 {
 public:
     CTxIn vin;
+	CPubKey pubKeyCollateralAddress;
     uint256 blockHash;
     int64_t sigTime; //mnb message times
     	
@@ -41,6 +42,7 @@ public:
 
     CMasternodePing() :
         vin(),
+		pubKeyCollateralAddress(),
         blockHash(),
         sigTime(0),
         validTimes(0),
@@ -55,6 +57,7 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(vin);
+		READWRITE(pubKeyCollateralAddress);
         READWRITE(blockHash);
         READWRITE(sigTime);
 		READWRITE(validTimes);
@@ -70,6 +73,7 @@ public:
         // by swapping the members of two classes,
         // the two classes are effectively swapped
         swap(first.vin, second.vin);
+		swap(first.pubKeyCollateralAddress, second.pubKeyCollateralAddress);
         swap(first.blockHash, second.blockHash);
         swap(first.sigTime, second.sigTime);
 		swap(first.validTimes, second.validTimes);
@@ -91,6 +95,7 @@ public:
     bool CheckSignature(CPubKey& pubKeyMasternode, int &nDos);
     bool SimpleCheck(int& nDos);
     bool CheckAndUpdate(CMasternode* pmn, bool fFromNewBroadcast, int& nDos);
+	bool CheckRegisteredMaster(CMasternodePing& mnp);
     void Relay();
 
     CMasternodePing& operator=(CMasternodePing from)
@@ -162,7 +167,8 @@ public:
         MASTERNODE_WATCHDOG_EXPIRED,
         MASTERNODE_NEW_START_REQUIRED,
         MASTERNODE_POSE_BAN,
-        MASTERNODE_NO_REGISTERED
+        MASTERNODE_NO_REGISTERED,
+        MASTERNODE_CERTIFICATE_FAILED
     };
 
     CTxIn vin;

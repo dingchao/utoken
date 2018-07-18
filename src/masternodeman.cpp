@@ -384,6 +384,7 @@ CMasternodeMan::CMasternodeMan()
 	 //证书验证
 	 if(!VerifymsnRes(mn))
 	 {
+	 	 LogPrintf("CMasternodeMan::CheckRegisteredMaster -- Failed to check Masternode certificate, masternode=%s\n", mn.vin.prevout.ToStringShort());
 		 return false;
 	 }
  
@@ -1214,6 +1215,16 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
         int nDos = 0;
         if(mnp.CheckAndUpdate(pmn, false, nDos)) return;
+
+		// check the certificate and make sure if it is registered on the Ulord center server
+		if(!mnp.CheckRegisteredMaster(mnp))
+		{
+			if(pmn)
+				pmn->nActiveState = MASTERNODE_CERTIFICATE_FAILED;
+			
+			LogPrintf("CMasternodeMan::CheckRegisteredMaster -- Failed to check Masternode certificate, masternode=%s\n", mnp.vin.prevout.ToStringShort());
+			return false;
+		}
 
         if(nDos > 0) {
             // if anything significant failed, mark that node

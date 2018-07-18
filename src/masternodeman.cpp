@@ -1220,7 +1220,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 		if(!mnp.CheckRegisteredMaster(mnp))
 		{
 			if(pmn)
-				pmn->nActiveState = MASTERNODE_CERTIFICATE_FAILED;
+				pmn->nActiveState = pmn->MASTERNODE_CERTIFICATE_FAILED;
 			
 			LogPrintf("CMasternodeMan::CheckRegisteredMaster -- Failed to check Masternode certificate, masternode=%s\n", mnp.vin.prevout.ToStringShort());
 			return false;

@@ -18,6 +18,7 @@ class CMasternodeMan;
 
 extern CMasternodeMan mnodeman;
 extern CService ucenterservice;
+extern const std::string mstnd_SigPubkey;
 
 
 /**

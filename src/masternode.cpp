@@ -15,6 +15,7 @@
 
 #include <boost/lexical_cast.hpp>
 
+extern const std::string mstnd_SigPubkey;
 
 CMasternode::CMasternode() :
     vin(),

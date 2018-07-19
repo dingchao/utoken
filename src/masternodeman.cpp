@@ -329,7 +329,7 @@ CMasternodeMan::CMasternodeMan()
 				  if(mstnode._validflag <= 0)
 				  {
 					  CloseSocket(hSocket);
-					  return error("receive a invalid validflag by mstnode %s, validflag %d", mstnode._masteraddr.c_str(), mstnode._validflag);
+					  return error("receive a invalid validflag validflag %d", mstnode._validflag);
 				  }
 				  mn.validTimes = mstnode._validTimes;
 				  mn.certificate = mstnode._certificate;
@@ -341,7 +341,7 @@ CMasternodeMan::CMasternodeMan()
 				  }
 			  }
 			  //std::cout << "MasterNode check success *********************" << std::endl;
-			  LogPrintf("CMasternodeMan::CheckActiveMaster: MasterNode %s check success\n", mstquest._masteraddr);
+			  LogPrintf("CMasternodeMan::CheckActiveMaster: MasterNode %s check success\n", mstquest._txid);
 			  CloseSocket(hSocket);
 			  return true;
 		  }

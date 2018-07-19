@@ -506,13 +506,13 @@ score        int NOT NULL DEFAULT '0',
  */ 
       
 public:  
-    CMstNodeData():_version(0), _masteraddr(""){}  
+    CMstNodeData():_version(0){}  
   
-    CMstNodeData(int version, std::string addr):_version(version), _masteraddr(addr){}  
+    CMstNodeData(int version, std::string addr):_version(version){}  
   
     int GetVersion() const {return _version;}  
     int GetValidFlag() const {return _validflag;}  
-    std::string GetMasterAddr() const {return _masteraddr;}  
+    //std::string GetMasterAddr() const {return _masteraddr;}  
 
     CMstNodeData & operator=(CMstNodeData &b)
     {

@@ -722,7 +722,7 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
 	CMasternode mn(*this);
 	if(!mnodeman.CheckRegisteredMaster(mn))
 	{
-		nActiveState = MASTERNODE_CERTIFICATE_FAILD;
+		nActiveState = MASTERNODE_CERTIFICATE_FAILED;
 		LogPrintf("CMasternodeBroadcast::CheckOutpoint -- Failed to check Masternode certificate, masternode=%s\n", mn.vin.prevout.ToStringShort());
 		return false;
 	}

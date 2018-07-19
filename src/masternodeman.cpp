@@ -237,7 +237,7 @@ CMasternodeMan::CMasternodeMan()
 	  if(ConnectSocket(ucenterservice, hSocket, DEFAULT_CONNECT_TIMEOUT, &proxyConnectionFailed))
 	  {
 		  if (!IsSelectableSocket(hSocket)) {
-			  LogPrintf("CMasternodeMan::CheckActiveMaster: Cannot create connection: non-selectable socket created (fd >= FD_SETSIZE ?)\n");
+			  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: Cannot create connection: non-selectable socket created (fd >= FD_SETSIZE ?)\n");
 			  CloseSocket(hSocket);
 			  return /*false*/true;
 		  }
@@ -246,7 +246,7 @@ CMasternodeMan::CMasternodeMan()
 		  if(!SendRequestNsg(hSocket, mn, mstquest))
 		  {
 			  CloseSocket(hSocket);
-			  return error("CMasternodeMan::CheckActiveMaster: send RequestMsgType error");
+			  return error("CMasternodeMan::GetCertificateFromUcenter: send RequestMsgType error");
 		  }
   
 		  char cbuf[mstnd_iReqBufLen];
@@ -260,14 +260,14 @@ CMasternodeMan::CMasternodeMan()
 			  if((GetTime() - nTimeLast) >= mstnd_iReqMsgTimeout)
 			  {
 				  CloseSocket(hSocket);
-				  LogPrintf("CMasternodeMan::CheckActiveMaster: Passed because wait for ack message timeout\n");
+				  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: Passed because wait for ack message timeout\n");
 				  return /*error("CMasternodeMan::CheckActiveMaster: recv CMstNodeData timeout")*/true;
 			  }
 		  }
 		  if(nBytes > mstnd_iReqBufLen)
 		  {
 			  CloseSocket(hSocket);
-			  return error("CMasternodeMan::CheckActiveMaster: msg have too much bytes %d, need increase rcv buf size", nBytes);
+			  return error("CMasternodeMan::GetCertificateFromUcenter: msg have too much bytes %d, need increase rcv buf size", nBytes);
 		  }
 		  
 		  int msglen = 0;
@@ -277,7 +277,7 @@ CMasternodeMan::CMasternodeMan()
 		  if(msglen != nBytes - mstnd_iReqMsgHeadLen)
 		  {
 			  CloseSocket(hSocket);
-			  return error("CMasternodeMan::CheckActiveMaster: receive a error msg length is %d, recv bytes is %d", msglen, nBytes);
+			  return error("CMasternodeMan::GetCertificateFromUcenter: receive a error msg length is %d, recv bytes is %d", msglen, nBytes);
 		  }
 		  
 		  std::string str(cbuf + mstnd_iReqMsgHeadLen, msglen);
@@ -302,15 +302,16 @@ CMasternodeMan::CMasternodeMan()
 				  }
 				  mn.validTimes = mstnode._validTimes;
 				  mn.certificate = mstnode._certificate;
-				  LogPrintf("CMasternodeMan::CheckActiveMaster: MasterNode certificate %s time = %d\n", mstnode._certificate, mstnode._validTimes);
+				  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: MasterNode certificate %s time = %d\n", mstnode._certificate, mstnode._validTimes);
 				  vecnode.push_back(mstnode);
 			  	  if(!VerifymsnRes(mn))
 				  {
+				      LogPrintf("CMasternodeMan::GetCertificateFromUcenter: connect to center server update certificate failed\n");
 					  return false;
 				  }
 			  }
 			  //std::cout << "MasterNode check success *********************" << std::endl;
-			  LogPrintf("CMasternodeMan::CheckActiveMaster: MasterNode %s check success\n", mstquest._txid);
+			  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: MasterNode %s check success\n", mstquest._txid);
 			  CloseSocket(hSocket);
 			  return true;
 		  }
@@ -320,7 +321,7 @@ CMasternodeMan::CMasternodeMan()
 		  }    
 	  }
 	  CloseSocket(hSocket);
-	  LogPrintf("CMasternodeMan::CheckActiveMaster: Passed because could't connect to center server\n");
+	  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: Passed because could't connect to center server\n");
 	  return /*false*/true;
   }
 

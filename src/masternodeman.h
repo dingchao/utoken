@@ -409,30 +409,34 @@ class  mstnodequest
 public:
     mstnodequest(int version, MST_QUEST  type  ):_msgversion(version), _questtype(type)
     {
-       _verfyflag=std::string("#$%@");  
+       //_verfyflag=std::string("#$%@");  
        
     }  
     mstnodequest(){}
     int        _msgversion; 	
     int        _questtype;
 	int64_t    _timeStamps;
-    std::string     _verfyflag;
-    std::string     _masteraddr;
+    //std::string     _verfyflag;
+    //std::string     _masteraddr;
+    std::string     _txid;
+	unsigned int    _voutid;    
     friend class boost::serialization::access;
     
     template<class Archive>
     void serialize(Archive& ar, const unsigned int version)
     {  
-        ar & _verfyflag;
+        //sar & _verfyflag;
         ar & _msgversion;
 		ar & _timeStamps;
         ar & _questtype;
-        ar & _masteraddr;
+        ar & _txid;
+		ar & _voutid;
+        //ar & _masteraddr;
         //ar & _llAmount;  
     }  
     int GetVersion() const {return _msgversion;}  
     int GetQuestType() const {return _questtype;}  
-    void  SetMasterAddr(std::string addr){ _masteraddr=addr;}
+    //void  SetMasterAddr(std::string addr){ _masteraddr=addr;}
 };
 
 //extern mstnodequest RequestMsgType(Center_Server_Version,MST_QUEST::MST_QUEST_ONE);
@@ -443,7 +447,7 @@ class  mstnoderes
 public:
     mstnoderes(int version  ):_msgversion(version)
     {
-       _verfyflag=std::string("#$%@");
+       //_verfyflag=std::string("#$%@");
        _num=1;
     }
 
@@ -451,17 +455,17 @@ public:
 
     int             _msgversion;
     int             _num;
-    std::string     _verfyflag;
-    std::string     _signstr;
+    //std::string     _verfyflag;
+    //std::string     _signstr;
     friend class boost::serialization::access;
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        ar & _verfyflag;
+        //ar & _verfyflag;
         ar & _msgversion;
         ar & _num;
-        ar & _signstr;  // 使用 查询的第一个地址来签名  。 
+        //ar & _signstr;  // 使用 查询的第一个地址来签名  。 
         //ar & _llAmount;  
     }
     int GetVersion() const {return _msgversion;}
@@ -479,7 +483,7 @@ private:
     void serialize(Archive& ar, const unsigned int version)  
     {  
         ar & _version;  
-        ar & _masteraddr;  
+        //ar & _masteraddr;  
         ar & _txid;  
 	ar & _outid;
         ar & _hostname;  
@@ -513,7 +517,7 @@ public:
     CMstNodeData & operator=(CMstNodeData &b)
     {
         _version   = b._version;
-        _masteraddr= b._masteraddr;
+        //_masteraddr= b._masteraddr;
         _hostname  = b._hostname;
         _hostip    = b._hostip;
         _validflag = b._validflag;
@@ -525,7 +529,7 @@ public:
     }
 public:  
     int _version;  
-    std::string _masteraddr; // node addr
+    //std::string _masteraddr; // node addr
     std::string _txid;      //  
     int         _outid;      //
     std::string _hostname;  // 

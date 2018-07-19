@@ -137,9 +137,9 @@ bool SendRequestNsg(SOCKET sock, CMasternode &mn, mstnodequest &mstquest)
 	memset(cbuf,0,sizeof(cbuf));
 	int buflength = 0;
 	
-	CBitcoinAddress address(mn.pubKeyCollateralAddress.GetID());
+	//CBitcoinAddress address(mn.pubKeyCollateralAddress.GetID());
 	
-	mstquest.SetMasterAddr(address.ToString()/*std::string("uRr71rfTD1nvpmxaSxou5ATvqGriXCysrL")*/);
+	//mstquest.SetMasterAddr(address.ToString()/*std::string("uRr71rfTD1nvpmxaSxou5ATvqGriXCysrL")*/);
 	mstquest._timeStamps = GetTime();
 	
 	//std::cout << "check masternode addr " << mstquest._masteraddr << std::endl;

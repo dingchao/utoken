@@ -143,7 +143,6 @@ bool SendRequestNsg(SOCKET sock, CMasternode &mn, mstnodequest &mstquest)
 	mstquest._timeStamps = GetTime();
 	
 	//std::cout << "check masternode addr " << mstquest._masteraddr << std::endl;
-	LogPrintf("CheckActiveMaster: start check masternode %s\n", mstquest._masteraddr);
 	
     std::ostringstream os;
     boost::archive::binary_oarchive oa(os);
@@ -167,36 +166,6 @@ bool SendRequestNsg(SOCKET sock, CMasternode &mn, mstnodequest &mstquest)
 }
 
 extern const std::string strMessageMagic;
-bool VerifymsnRes(const mstnoderes & res, const mstnodequest & qst)
-{
-	CPubKey pubkeyFromSig;
-	std::vector<unsigned char> vchSigRcv;
-	vchSigRcv = ParseHex(res._signstr);
-		
-	CPubKey pubkeyLocal(ParseHex(mstnd_SigPubkey));
-		
-	CHashWriter ss(SER_GETHASH, 0);
-    ss << strMessageMagic;
-    ss << qst._masteraddr;
-	ss << qst._timeStamps;
-	uint256 reqhash = ss.GetHash();
-		
-	if(!pubkeyFromSig.RecoverCompact(reqhash, vchSigRcv)) {
-		LogPrintf("VerifymsnRes:Error recovering public key.");
-		return false;
-	}
-	
-	if(pubkeyFromSig.GetID() != pubkeyLocal.GetID()) {
-        LogPrintf("Keys don't match: pubkey=%s, pubkeyFromSig=%s, hash=%s, vchSig=%s",
-                    pubkeyLocal.GetID().ToString().c_str(), pubkeyFromSig.GetID().ToString().c_str(), ss.GetHash().ToString().c_str(),
-                    EncodeBase64(&vchSigRcv[0], vchSigRcv.size()));
-		/*std::cout << "Keys don't match: pubkey = " << pubkeyLocal.GetID().ToString() << " ,pubkeyFromSig = " << pubkeyFromSig.GetID().ToString()
-			<< std::endl << "wordHash = " << reqhash.ToString()
-			<< std::endl << "vchSig = " << EncodeBase64(&vchSigRcv[0], vchSigRcv.size()) << std::endl;*/
-        return false;
-    }
-	return true;
-}
 
 bool VerifymsnRes(const CMasternode &mn)
 {

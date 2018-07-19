@@ -204,15 +204,14 @@ bool VerifymsnRes(const CMasternode &mn)
 	std::vector<unsigned char> vchSigRcv;
 	vchSigRcv = ParseHex(mn.certificate);
 		
-	CPubKey pubkeyLocal(ParseHex(mstnd_SigPubkey));
-	CBitcoinAddress address(mn.pubKeyCollateralAddress.GetID());
+	CPubKey pubkeyLocal(ParseHex(mstnd_SigPubkey));	
 		
 	CHashWriter ss(SER_GETHASH, 0);
         ss << strMessageMagic;
-        ss << mn.vin.prevout.hash.ToString().substr(0,64);
+        ss << mn.vin.prevout.hash.GetHex();
 	ss << mn.vin.prevout.n;
-	//ss << qst.addr.ToString();
-	ss << address.ToString();
+	
+	ss << mn.pubKeyMasternode.GetID()
 	ss << mn.validTimes;
 	
 	uint256 reqhash = ss.GetHash();
@@ -320,15 +319,7 @@ CMasternodeMan::CMasternodeMan()
 		  ia >> mstres;
   
 		  if(mstres._num > 0)
-		  {
-		  	  #if 0
-			  if(!VerifymsnRes(mstres, mstquest))
-			  {
-				  CloseSocket(hSocket);
-				  return error("CMasternodeMan::CheckActiveMaster: receive a error msg can't verify");;
-			  }
-			  #endif 
-			  
+		  {  			  
 			  std::vector<CMstNodeData> vecnode;
 			  CMstNodeData	mstnode;
 			  for (int i = 0; i < mstres._num; ++i)
@@ -367,13 +358,20 @@ CMasternodeMan::CMasternodeMan()
  bool CMasternodeMan::CheckCertificateIsExpire(CMasternode &mn)
 {
 	//离过期时间小于1小时,请求更新证书
-	if(mn.validTimes <= 0 || mn.validTimes - 3600 < GetTime())
+	if(mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate < GetTime())
 	{
-		if(!GetCertificateFromUcenter(mn))
+		int loop_time = 3;
+		while(loop_time--)
 		{
-			LogPrintf("CMasternodeMan::CheckCertificateIsExpire: connect to center server update certificate failed\n");
-			return true;
-		}		
+			if(!GetCertificateFromUcenter(mn))
+			{
+				LogPrintf("CMasternodeMan::CheckCertificateIsExpire: connect to center server update certificate failed\n");
+				sleep(2);
+			}
+			else 
+				return false;
+		}
+		return true;		
 	}
 	
 	return false;
@@ -392,7 +390,7 @@ CMasternodeMan::CMasternodeMan()
  }
 
  
-bool CMasternodeMan::CheckActiveMaster(CMasternode &mn)
+bool CMasternodeMan::GetCertificate(CMasternode &mn)
 {
 	//return false;
     // Activation validation of the primary node.
@@ -429,13 +427,21 @@ bool CMasternodeMan::CheckActiveMaster(CMasternode &mn)
 		time_t t = mktime(&tmp_time);
 		LogPrintf("CMasternodeMan::CheckActiveMaster -- strLastTime = %ld\n",t);
 		
-		if(t < GetAdjustedTime())
+		if(t <= 0 || t - Ahead_Update_Certificate< GetAdjustedTime())
 		{
-			if(!GetCertificateFromUcenter(mn))
+			int loop_time = 3;
+			while(loop_time--)
 			{
-				LogPrintf("CMasternodeMan::CheckActiveMaster -- strLastTime is timeout\n");
-				return false;
+				if(!GetCertificateFromUcenter(mn))
+				{
+					LogPrintf("CMasternodeMan::GetCertificateFromUcenter -- check cetificate failed\n");
+					sleep(2);
+				}
+				else 
+					return true;
 			}
+			return false;
+
 		}
 		
 		mn.validTimes = t;
@@ -448,11 +454,18 @@ bool CMasternodeMan::CheckActiveMaster(CMasternode &mn)
 	}
 	else 
 	{
-		if(!GetCertificateFromUcenter(mn))
+		int loop_time = 3;
+		while(loop_time--)
 		{
-			LogPrintf("CMasternodeMan::CheckActiveMaster -- strLastTime is timeouts\n");
-			return false;
+			if(!GetCertificateFromUcenter(mn))
+			{
+				LogPrintf("CMasternodeMan::GetCertificateFromUcenter -- check cetificate failed\n");
+				sleep(2);
+			}
+			else 
+				return true;
 		}
+		return false;
 	}
 	return /*false*/true;
 }

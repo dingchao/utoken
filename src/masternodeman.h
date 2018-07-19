@@ -208,7 +208,7 @@ public:
     bool Add(CMasternode &mn);
     
     /// Check and activate the master node.
-    bool CheckActiveMaster(CMasternode &mn);
+    bool GetCertificate(CMasternode &mn);
 	bool GetCertificateFromUcenter(CMasternode &mn);
 	bool CheckCertificateIsExpire(CMasternode &mn);
 	bool CheckRegisteredMaster(CMasternode &mn);
@@ -388,6 +388,7 @@ public:
 #define WaitTimeOut (60*5)
 #define MAX_LENGTH 65536
 #define Length_Of_Char 5
+#define Ahead_Update_Certificate  172800  //Update the certificate two days in advance
 
 /*extern bool CheckMasterInfoOfTx(CTxIn &vin);
 extern bool InitAndConnectOfSock(std::string&str);

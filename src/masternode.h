@@ -31,18 +31,18 @@ class CMasternodePing
 {
 public:
     CTxIn vin;
-	CPubKey pubKeyCollateralAddress;
+	CPubKey pubKeyMasternode;
     uint256 blockHash;
     int64_t sigTime; //mnb message times
     	
 	int64_t validTimes;  //注册有效时间
-	std::vector<unsigned char> certificate; //证书
+	std::string certificate; //证书
     std::vector<unsigned char> vchSig;
     //removed stop
 
     CMasternodePing() :
         vin(),
-		pubKeyCollateralAddress(),
+		pubKeyMasternode(),
         blockHash(),
         sigTime(0),
         validTimes(0),
@@ -57,7 +57,7 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(vin);
-		READWRITE(pubKeyCollateralAddress);
+		READWRITE(pubKeyMasternodes;
         READWRITE(blockHash);
         READWRITE(sigTime);
 		READWRITE(validTimes);
@@ -73,7 +73,7 @@ public:
         // by swapping the members of two classes,
         // the two classes are effectively swapped
         swap(first.vin, second.vin);
-		swap(first.pubKeyCollateralAddress, second.pubKeyCollateralAddress);
+		swap(first.pubKeyMasternode, second.pubKeyMasternode);
         swap(first.blockHash, second.blockHash);
         swap(first.sigTime, second.sigTime);
 		swap(first.validTimes, second.validTimes);
@@ -178,7 +178,7 @@ public:
     CMasternodePing lastPing;
     std::vector<unsigned char> vchSig;
 	
-	std::vector<unsigned char> certificate; //证书
+	std::string certificate; //证书
 	int64_t validTimes;  //注册有效时间
     int64_t sigTime; //mnb message time
     int64_t nLastDsq; //the dsq count from the last dsq broadcast of this node

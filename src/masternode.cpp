@@ -15,7 +15,6 @@
 
 #include <boost/lexical_cast.hpp>
 
-extern const std::string mstnd_SigPubkey;
 
 CMasternode::CMasternode() :
     vin(),
@@ -374,7 +373,7 @@ std::string CMasternode::StateToString(int nStateIn)
         case MASTERNODE_NEW_START_REQUIRED:     return "NEW_START_REQUIRED";
         case MASTERNODE_POSE_BAN:               return "POSE_BAN";
 		case MASTERNODE_NO_REGISTERED:          return "NO_REGISTERED";
-		case MASTERNODE_CERTIFICATE_FAILED:		return "CERTIFICATE_FAILED";
+		case MASTERNODE_CERTIFICATE_FAILED:		return "CERTIFICATE_FAILD";
         default:                                return "UNKNOWN";
     }
 }
@@ -723,7 +722,7 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
 	CMasternode mn(*this);
 	if(!mnodeman.CheckRegisteredMaster(mn))
 	{
-		nActiveState = MASTERNODE_CERTIFICATE_FAILED;
+		nActiveState = MASTERNODE_CERTIFICATE_FAILD;
 		LogPrintf("CMasternodeBroadcast::CheckOutpoint -- Failed to check Masternode certificate, masternode=%s\n", mn.vin.prevout.ToStringShort());
 		return false;
 	}
@@ -979,14 +978,14 @@ bool CMasternodePing::CheckRegisteredMaster(CMasternodePing& mnp)
 	std::vector<unsigned char> vchSigRcv;
 	vchSigRcv = ParseHex(mnp.certificate);
 		
-	CPubKey pubkeyLocal(ParseHex(mstnd_SigPubkey));
-	CBitcoinAddress address(mnp.pubKeyCollateralAddress.GetID());
+	CPubKey pubkeyLocal(ParseHex(mstnd_SigPubkey));	
+
 		
 	CHashWriter ss(SER_GETHASH, 0);
 	ss << strMessageMagic;
-	ss << mnp.vin.prevout.hash.ToString().substr(0,64);
+	ss << mnp.vin.prevout.hash.GetHex();
 	ss << mnp.vin.prevout.n;
-	ss << address.ToString();
+	ss << mnp.pubKeyMasternode.GetID();
 	ss << mnp.validTimes;
 
 	uint256 reqhash = ss.GetHash();

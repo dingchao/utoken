@@ -57,7 +57,7 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(vin);
-		READWRITE(pubKeyMasternodes;
+		READWRITE(pubKeyMasternode);
         READWRITE(blockHash);
         READWRITE(sigTime);
 		READWRITE(validTimes);

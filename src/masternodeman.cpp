@@ -239,7 +239,7 @@ CMasternodeMan::CMasternodeMan()
 		  if (!IsSelectableSocket(hSocket)) {
 			  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: Cannot create connection: non-selectable socket created (fd >= FD_SETSIZE ?)\n");
 			  CloseSocket(hSocket);
-			  return /*false*/true;
+			  return false/*true*/;
 		  }
   
 		  mstnodequest mstquest(111,MST_QUEST_ONE); 	  
@@ -261,7 +261,7 @@ CMasternodeMan::CMasternodeMan()
 			  {
 				  CloseSocket(hSocket);
 				  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: Passed because wait for ack message timeout\n");
-				  return /*error("CMasternodeMan::CheckActiveMaster: recv CMstNodeData timeout")*/true;
+				  return error("CMasternodeMan::CheckActiveMaster: recv CMstNodeData timeout");
 			  }
 		  }
 		  if(nBytes > mstnd_iReqBufLen)

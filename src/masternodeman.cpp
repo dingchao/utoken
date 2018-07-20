@@ -180,7 +180,7 @@ bool VerifymsnRes(const CMasternode &mn)
         ss << mn.vin.prevout.hash.GetHex();
 	ss << mn.vin.prevout.n;
 	
-	ss << mn.pubKeyMasternode.GetID();
+	ss << mn.pubKeyMasternode.GetID().ToString();
 	ss << mn.validTimes;
 	
 	uint256 reqhash = ss.GetHash();

@@ -838,6 +838,7 @@ CMasternodePing::CMasternodePing(CTxIn& vinNew)
 	{
 	    validTimes = pmn->validTimes;
 	    certificate = pmn->certificate;
+		pubKeyMasternode = pmn->pubKeyMasternode;
 	}
     vchSig = std::vector<unsigned char>();
 }

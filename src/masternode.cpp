@@ -985,7 +985,7 @@ bool CMasternodePing::CheckRegisteredMaster(CMasternodePing& mnp)
 	ss << strMessageMagic;
 	ss << mnp.vin.prevout.hash.GetHex();
 	ss << mnp.vin.prevout.n;
-	ss << mnp.pubKeyMasternode.GetID();
+	ss << mnp.pubKeyMasternode.GetID().ToString();
 	ss << mnp.validTimes;
 
 	uint256 reqhash = ss.GetHash();

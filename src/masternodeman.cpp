@@ -141,6 +141,8 @@ bool SendRequestNsg(SOCKET sock, CMasternode &mn, mstnodequest &mstquest)
 	
 	//mstquest.SetMasterAddr(address.ToString()/*std::string("uRr71rfTD1nvpmxaSxou5ATvqGriXCysrL")*/);
 	mstquest._timeStamps = GetTime();
+	mstquest._txid = mn.vin.prevout.hash.GetHex();
+	mstquest._voutid = mn.vin.prevout.n;
 	
 	//std::cout << "check masternode addr " << mstquest._masteraddr << std::endl;
 	

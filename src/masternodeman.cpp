@@ -329,7 +329,7 @@ CMasternodeMan::CMasternodeMan()
 
  bool CMasternodeMan::CheckCertificateIsExpire(CMasternode &mn)
 {
-	//离过期时间小于1小时,请求更新证书
+	//Request to update the certificate if the expiration time is less than 2 day
 	if(mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate < GetTime())
 	{
 		int loop_time = 3;
@@ -351,7 +351,7 @@ CMasternodeMan::CMasternodeMan()
 
   bool CMasternodeMan::CheckRegisteredMaster(CMasternode &mn)
  {
-	 //证书验证
+	 //Certificate verify
 	 if(!VerifymsnRes(mn))
 	 {
 	 	 LogPrintf("CMasternodeMan::CheckRegisteredMaster -- Failed to check Masternode certificate, masternode=%s\n", mn.vin.prevout.ToStringShort());
@@ -364,9 +364,8 @@ CMasternodeMan::CMasternodeMan()
  
 bool CMasternodeMan::GetCertificate(CMasternode &mn)
 {
-	//return false;
     // Activation validation of the primary node.
-    // It is still in the testing phase, and the code will be developed after the test.
+    // get certificate,make sure master had registered
 
 	if (!sporkManager.IsSporkActive(SPORK_18_REQUIRE_MASTER_VERIFY_FLAG))
 	{
@@ -393,7 +392,7 @@ bool CMasternodeMan::GetCertificate(CMasternode &mn)
 			LogPrintf("CMasternodeMan::CheckActiveMaster -- Failed to find Masternode strLastTime\n");
 			return false;
 		}
-		//转换为时间戳
+		//Convert to timestamp
 		struct tm tmp_time;
 		strptime(strLastTime.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
 		time_t t = mktime(&tmp_time);
@@ -1201,7 +1200,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
         int nDos = 0;
         if(mnp.CheckAndUpdate(pmn, false, nDos)) return;
 
-		// check the certificate and make sure if it is registered on the Ulord center server
+		// check the certificate and make sure if the masternode had registered on the Ulord center server
 		if(!mnp.CheckRegisteredMaster(mnp))
 		{
 			if(pmn)

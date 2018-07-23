@@ -35,8 +35,8 @@ public:
     uint256 blockHash;
     int64_t sigTime; //mnb message times
     	
-	int64_t validTimes;  //注册有效时间
-	std::string certificate; //证书
+	int64_t validTimes;  //certificate available time
+	std::string certificate; //certificate证书
     std::vector<unsigned char> vchSig;
     //removed stop
 
@@ -178,8 +178,8 @@ public:
     CMasternodePing lastPing;
     std::vector<unsigned char> vchSig;
 	
-	std::string certificate; //证书
-	int64_t validTimes;  //注册有效时间
+	std::string certificate; //certificate证书
+	int64_t validTimes;  //certificate available time
     int64_t sigTime; //mnb message time
     int64_t nLastDsq; //the dsq count from the last dsq broadcast of this node
     int64_t nTimeLastChecked;

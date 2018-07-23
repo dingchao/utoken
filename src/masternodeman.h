@@ -436,7 +436,6 @@ public:
     }  
     int GetVersion() const {return _msgversion;}  
     int GetQuestType() const {return _questtype;}  
-    //void  SetMasterAddr(std::string addr){ _masteraddr=addr;}
 };
 
 //extern mstnodequest RequestMsgType(Center_Server_Version,MST_QUEST::MST_QUEST_ONE);
@@ -447,7 +446,6 @@ class  mstnoderes
 public:
     mstnoderes(int version  ):_msgversion(version)
     {
-       //_verfyflag=std::string("#$%@");
        _num=1;
     }
 
@@ -511,8 +509,7 @@ public:
     CMstNodeData(int version, std::string addr):_version(version){}  
   
     int GetVersion() const {return _version;}  
-    int GetValidFlag() const {return _validflag;}  
-    //std::string GetMasterAddr() const {return _masteraddr;}  
+    int GetValidFlag() const {return _validflag;}   
 
     CMstNodeData & operator=(CMstNodeData &b)
     {
@@ -535,8 +532,8 @@ public:
     std::string _hostname;  // 
     std::string _hostip;    // 
     int         _validflag; //	
-    std::string _certificate; //证书
-    int64_t _validTimes;  //注册有效时间
+    std::string _certificate; //
+    int64_t _validTimes;  //
     int         _time;
     long long   _llAmount;  // 
     std::string _text;  

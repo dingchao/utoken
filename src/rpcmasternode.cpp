@@ -110,7 +110,7 @@ UniValue masternode(const UniValue& params, bool fHelp)
 #endif // ENABLE_WALLET
          strCommand != "list" && strCommand != "list-conf" && strCommand != "count" &&
          strCommand != "debug" && strCommand != "current" && strCommand != "winner" && strCommand != "winners" && strCommand != "genkey" &&
-         strCommand != "connect" && strCommand != "status"))
+         strCommand != "connect" && strCommand != "status" && strCommand != "certificate"))
             throw std::runtime_error(
                 "masternode \"command\"... ( \"passphrase\" )\n"
                 "Set of commands to execute masternode related actions\n"
@@ -447,6 +447,24 @@ UniValue masternode(const UniValue& params, bool fHelp)
             if (strFilter !="" && strPayment.find(strFilter) == std::string::npos) continue;
             obj.push_back(Pair(strprintf("%d", i), strPayment));
         }
+		
+		if (strCommand == "certificate")
+		{
+			if (!fMasterNode)
+				throw JSONRPCError(RPC_INTERNAL_ERROR, "This is not a masternode");
+		
+			UniValue mnObj(UniValue::VOBJ);
+
+			//CMasternode* pmn = mnodeman.Find(activeMasternode.vin);
+		    //mnObj.push_back(Pair(pmn->vin->prevout.ToStringShort(), pmn->certificate));
+		
+			CMasternode mn;
+			if(mnodeman.Get(activeMasternode.vin, mn)) {
+				mnObj.push_back(Pair(mn.vin.prevout.ToStringShort(), mn.certificate));
+			}
+		
+			return mnObj;
+		}
 
         return obj;
     }

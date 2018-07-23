@@ -467,7 +467,7 @@ UniValue masternode(const UniValue& params, bool fHelp)
 		}
 		else
 		{
-			mnObj.push_back(Pair("status"), activeMasternode.GetStatus()));
+			mnObj.push_back(Pair(("status"), activeMasternode.GetStatus()));
 		}
 		return mnObj;
 	}

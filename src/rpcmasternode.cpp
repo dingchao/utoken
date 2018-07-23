@@ -133,6 +133,7 @@ UniValue masternode(const UniValue& params, bool fHelp)
                 "  list-conf    - Print masternode.conf in JSON format\n"
                 "  winner       - Print info on next masternode winner to vote for\n"
                 "  winners      - Print list of masternode winners\n"
+                "  certificate  - Print masternode register certificate\n"
                 );
 
     if (strCommand == "list")
@@ -462,7 +463,7 @@ UniValue masternode(const UniValue& params, bool fHelp)
 	
 		CMasternode mn;
 		if(mnodeman.Get(activeMasternode.vin, mn)) {
-			mnObj.push_back(Pair(mn.vin.prevout.ToStringShort(), mn.certificate));
+			mnObj.push_back(Pair(mn.vin.prevout.ToStringShort(), mn.certificate.c_str()));
 		}
 		else
 		{

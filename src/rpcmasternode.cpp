@@ -464,7 +464,10 @@ UniValue masternode(const UniValue& params, bool fHelp)
 		if(mnodeman.Get(activeMasternode.vin, mn)) {
 			mnObj.push_back(Pair(mn.vin.prevout.ToStringShort(), mn.certificate));
 		}
-	
+		else
+		{
+			mnObj.push_back(Pair("too early get certificate,masternode status is "), activeMasternode.GetStatus()));
+		}
 		return mnObj;
 	}
 

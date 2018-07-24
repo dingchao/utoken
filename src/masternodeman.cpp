@@ -324,7 +324,7 @@ CMasternodeMan::CMasternodeMan()
 	  }
 	  CloseSocket(hSocket);
 	  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: Passed because could't connect to center server\n");
-	  return /*false*/true;
+	  return false;
   }
 
  bool CMasternodeMan::CheckCertificateIsExpire(CMasternode &mn)

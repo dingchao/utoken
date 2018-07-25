@@ -339,7 +339,7 @@ bool CMasterndoeMan::UpdateCertificate(CMasternode &mn)
 	//Request to update the certificate if the expiration time is less than 2 day
 	if(mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate < GetTime())
 	{
-		GetCertificateFromUcenter(mn); 	  
+		//GetCertificateFromUcenter(mn);  
 	}
     
 }

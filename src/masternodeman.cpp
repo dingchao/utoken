@@ -178,8 +178,8 @@ bool VerifymsnRes(const CMasternode &mn)
 	CPubKey pubkeyLocal(ParseHex(mstnd_SigPubkey));	
 		
 	CHashWriter ss(SER_GETHASH, 0);
-        ss << strMessageMagic;
-        ss << mn.vin.prevout.hash.GetHex();
+    ss << strMessageMagic;
+    ss << mn.vin.prevout.hash.GetHex();
 	ss << mn.vin.prevout.n;
 	
 	ss << mn.pubKeyMasternode.GetID().ToString();
@@ -332,18 +332,11 @@ CMasternodeMan::CMasternodeMan()
 	//Request to update the certificate if the expiration time is less than 2 day
 	if(mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate < GetTime())
 	{
-		int loop_time = 3;
-		while(loop_time--)
+		if(!GetCertificateFromUcenter(mn))
 		{
-			if(!GetCertificateFromUcenter(mn))
-			{
-				LogPrintf("CMasternodeMan::CheckCertificateIsExpire: connect to center server update certificate failed\n");
-				sleep(2);
-			}
-			else 
-				return false;
-		}
-		return true;		
+			LogPrintf("CMasternodeMan::CheckCertificateIsExpire: connect to center server update certificate failed\n");
+			return true;
+		}		
 	}
 	
 	return false;
@@ -361,6 +354,39 @@ CMasternodeMan::CMasternodeMan()
 	 return true;
  }
 
+bool CMasternodeMan::GetCertificateFromConf(CMasternode &mn)
+{
+	std::string strCettificate = GetArg("-certificate", "");
+	if(strCettificate.empty())
+	{
+		LogPrintf("CMasternodeMan::GetCertificateFromConf -- Failed to read Masternode certificate from conf\n");
+		return false;
+	}
+	
+	std::string strLastTime = GetArg("-lasttime", "");
+	if(strLastTime.empty())
+	{
+		LogPrintf("CMasternodeMan::GetCertificateFromConf -- Failed to read Masternode lasttime from conf\n");
+		return false;
+	}
+	//Convert to timestamp
+	struct tm tmp_time;
+	strptime(strLastTime.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
+	time_t t = mktime(&tmp_time);
+	LogPrintf("CMasternodeMan::GetCertificateFromConf -- strLastTime = %ld\n",t);	
+
+    mn.validTimes = t;
+    mn.certificate = strCettificate;
+	
+	if(!VerifymsnRes(mn))
+	{
+		LogPrintf("CMasternodeMan::VerifymsnRes -- check cetificate failed\n");
+		return false;
+	}
+
+	return true;
+	
+}
  
 bool CMasternodeMan::GetCertificate(CMasternode &mn)
 {
@@ -377,68 +403,28 @@ bool CMasternodeMan::GetCertificate(CMasternode &mn)
 	
     bool ucenterfirst = GetBoolArg("-ucenterfirst", true);
 	if(!ucenterfirst)
-	{
-		
-		std::string strCettificate = GetArg("-certificate", "");
-		if(strCettificate.empty())
-		{
-			LogPrintf("CMasternodeMan::CheckActiveMaster -- Failed to find Masternode certificate\n");
-			return false;
-		}
-		
-		std::string strLastTime = GetArg("-lasttime", "");
-		if(strLastTime.empty())
-		{
-			LogPrintf("CMasternodeMan::CheckActiveMaster -- Failed to find Masternode strLastTime\n");
-			return false;
-		}
-		//Convert to timestamp
-		struct tm tmp_time;
-		strptime(strLastTime.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
-		time_t t = mktime(&tmp_time);
-		LogPrintf("CMasternodeMan::CheckActiveMaster -- strLastTime = %ld\n",t);
-		
-		if(t <= 0 || t - Ahead_Update_Certificate< GetAdjustedTime())
-		{
-			int loop_time = 3;
-			while(loop_time--)
-			{
-				if(!GetCertificateFromUcenter(mn))
-				{
-					LogPrintf("CMasternodeMan::GetCertificateFromUcenter -- check cetificate failed\n");
-					sleep(2);
-				}
-				else 
-					return true;
-			}
-			return false;
-
-		}
-		
-		mn.validTimes = t;
-		mn.certificate = strCettificate;
-		
-		if(!VerifymsnRes(mn))
-		{
-			return false;
-		}
-	}
-	else 
-	{
-		int loop_time = 3;
-		while(loop_time--)
+	{	
+		if(!GetCertificateFromConf(mn) || mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate< GetAdjustedTime())
 		{
 			if(!GetCertificateFromUcenter(mn))
 			{
 				LogPrintf("CMasternodeMan::GetCertificateFromUcenter -- check cetificate failed\n");
-				sleep(2);
+				return false;
 			}
-			else 
-				return true;
 		}
-		return false;
 	}
-	return /*false*/true;
+	else 
+	{
+		if(!GetCertificateFromUcenter(mn))
+		{	
+			if(!GetCertificateFromConf(mn))
+			{
+				LogPrintf("CMasternodeMan::GetCertificateFromUcenter -- check cetificate failed\n");
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 bool CMasternodeMan::Add(CMasternode &mn)

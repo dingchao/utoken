@@ -212,7 +212,7 @@ public:
 	bool GetCertificateFromUcenter(CMasternode &mn);
 	bool GetCertificateFromConf(CMasternode &mn);
 	bool CheckCertificateIsExpire(CMasternode &mn);
-	bool CheckRegisteredMaster(CMasternode &mn);
+	bool VerifyMasterCertificate(CMasternode &mn);
 	bool UpdateCertificate(CMasternode &mn);
 
     /// Ask (source) node for mnb

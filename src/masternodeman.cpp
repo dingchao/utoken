@@ -334,7 +334,7 @@ CMasternodeMan::CMasternodeMan()
 	  return false;
   }
 
-bool CMasterndoeMan::UpdateCertificate(CMasternode &mn)
+void CMasterndoeMan::UpdateCertificate(CMasternode &mn)
 {
 	//Request to update the certificate if the expiration time is less than 2 day
 	if(mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate < GetTime())
@@ -353,7 +353,7 @@ bool CMasterndoeMan::UpdateCertificate(CMasternode &mn)
 	return false;
 }
 
-  bool CMasternodeMan::CheckRegisteredMaster(CMasternode &mn)
+  bool CMasternodeMan::VerifyMasterCertificate(CMasternode &mn)
  {
 	 //Certificate verify
 	 if(!VerifymsnRes(mn))

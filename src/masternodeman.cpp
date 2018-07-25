@@ -171,6 +171,12 @@ extern const std::string strMessageMagic;
 
 bool VerifymsnRes(const CMasternode &mn)
 {
+	if(mn.validTimes < GetTime())
+	{
+		LogPrintf("VerifymsnRes:certificate is timeout.");
+		return false;
+	}
+		
 	CPubKey pubkeyFromSig;
 	std::vector<unsigned char> vchSigRcv;
 	vchSigRcv = ParseHex(mn.certificate);
@@ -289,29 +295,30 @@ CMasternodeMan::CMasternodeMan()
 		  boost::archive::binary_iarchive ia(strstream);
 		  ia >> mstres;
   
-		  if(mstres._num > 0)
+		  if(mstres._num == 1)
 		  {  			  
-			  std::vector<CMstNodeData> vecnode;
 			  CMstNodeData	mstnode;
-			  for (int i = 0; i < mstres._num; ++i)
+
+			  ia >> mstnode;
+			  if(mstnode._validflag <= 0)
 			  {
-				  ia >> mstnode;
-				  //std::cout << "mstnode "<<mstnode._masteraddr<< " validflag " << mstnode._validflag << " hostname  "<<mstnode._hostname << "  "<< mstnode._hostip << std::endl;
-				  if(mstnode._validflag <= 0)
-				  {
-					  CloseSocket(hSocket);
-					  return error("receive a invalid validflag validflag %d", mstnode._validflag);
-				  }
-				  mn.validTimes = mstnode._validTimes;
-				  mn.certificate = mstnode._certificate;
-				  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: MasterNode certificate %s time = %d\n", mstnode._certificate, mstnode._validTimes);
-				  vecnode.push_back(mstnode);
-			  	  if(!VerifymsnRes(mn))
-				  {
-				      LogPrintf("CMasternodeMan::GetCertificateFromUcenter: connect to center server update certificate failed\n");
-					  return false;
-				  }
+				  CloseSocket(hSocket);
+				  return error("receive a invalid validflag validflag %d", mstnode._validflag);
 			  }
+			  
+			  CMasternode tmn(mn);
+			  tmn.validTimes = mstnode._validTimes;
+			  tmn.certificate = mstnode._certificate;
+			  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: MasterNode certificate %s time = %d\n", mstnode._certificate, mstnode._validTimes);
+
+		  	  if(!VerifymsnRes(tmn))
+			  {
+			      LogPrintf("CMasternodeMan::GetCertificateFromUcenter: connect to center server update certificate failed\n");
+				  return false;
+			  }
+			  mn.validTimes = tmn.validTimes;
+			  mn.certificate = tmn.certificate;
+	
 			  //std::cout << "MasterNode check success *********************" << std::endl;
 			  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: MasterNode %s check success\n", mstquest._txid);
 			  CloseSocket(hSocket);
@@ -327,17 +334,21 @@ CMasternodeMan::CMasternodeMan()
 	  return false;
   }
 
- bool CMasternodeMan::CheckCertificateIsExpire(CMasternode &mn)
+bool CMasterndoeMan::UpdateCertificate(CMasternode &mn)
 {
 	//Request to update the certificate if the expiration time is less than 2 day
 	if(mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate < GetTime())
 	{
-		if(!GetCertificateFromUcenter(mn))
-		{
-			LogPrintf("CMasternodeMan::CheckCertificateIsExpire: connect to center server update certificate failed\n");
-			return true;
-		}		
+		GetCertificateFromUcenter(mn); 	  
 	}
+    
+}
+
+ bool CMasternodeMan::CheckCertificateIsExpire(CMasternode &mn)
+{
+	UpdateCertificate(mn);
+	if(mn.validTimes < GetTime())
+		return true;
 	
 	return false;
 }
@@ -375,15 +386,18 @@ bool CMasternodeMan::GetCertificateFromConf(CMasternode &mn)
 	time_t t = mktime(&tmp_time);
 	LogPrintf("CMasternodeMan::GetCertificateFromConf -- strLastTime = %ld\n",t);	
 
-    mn.validTimes = t;
-    mn.certificate = strCettificate;
+	CMasternode tmn(mn);
+    tmn.validTimes = t;
+    tmn.certificate = strCettificate;	
 	
-	if(!VerifymsnRes(mn))
+	if(!VerifymsnRes(tmn))
 	{
 		LogPrintf("CMasternodeMan::VerifymsnRes -- check cetificate failed\n");
 		return false;
 	}
 
+	mn.certificate = strCettificate;
+	mn.validTimes = t;
 	return true;
 	
 }
@@ -404,7 +418,7 @@ bool CMasternodeMan::GetCertificate(CMasternode &mn)
     bool ucenterfirst = GetBoolArg("-ucenterfirst", true);
 	if(!ucenterfirst)
 	{	
-		if(!GetCertificateFromConf(mn) || mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate< GetAdjustedTime())
+		if(!GetCertificateFromConf(mn))
 		{
 			if(!GetCertificateFromUcenter(mn))
 			{

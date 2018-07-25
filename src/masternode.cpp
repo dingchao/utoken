@@ -974,13 +974,17 @@ bool CMasternodePing::CheckAndUpdate(CMasternode* pmn, bool fFromNewBroadcast, i
 
 bool CMasternodePing::CheckRegisteredMaster(CMasternodePing& mnp)
 {
+	if(mnp.validTimes < GetTime())
+	{
+		LogPrintf("VerifymsnRes:certificate is timeout.");
+		return false;
+	}	
 
 	CPubKey pubkeyFromSig;
 	std::vector<unsigned char> vchSigRcv;
 	vchSigRcv = ParseHex(mnp.certificate);
 		
 	CPubKey pubkeyLocal(ParseHex(mstnd_SigPubkey));	
-
 		
 	CHashWriter ss(SER_GETHASH, 0);
 	ss << strMessageMagic;

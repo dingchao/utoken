@@ -333,17 +333,16 @@ CMasternodeMan::CMasternodeMan()
 	  LogPrintf("CMasternodeMan::GetCertificateFromUcenter: Passed because could't connect to center server\n");
 	  return false;
   }
-
-void CMasterndoeMan::UpdateCertificate(CMasternode &mn)
-{
-	//Request to update the certificate if the expiration time is less than 2 day
-	if(mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate < GetTime())
-	{
-		//GetCertificateFromUcenter(mn);  
-	}
-    
-}
-
+  
+  void CMasternodeMan::UpdateCertificate(CMasternode &mn)
+  {
+	  //Request to update the certificate if the expiration time is less than 2 day
+	  if(mn.validTimes <= 0 || mn.validTimes - Ahead_Update_Certificate < GetTime())
+	  {
+		  GetCertificateFromUcenter(mn);
+	  }
+  }
+  
  bool CMasternodeMan::CheckCertificateIsExpire(CMasternode &mn)
 {
 	UpdateCertificate(mn);

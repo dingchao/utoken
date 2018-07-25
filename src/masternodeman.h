@@ -213,7 +213,7 @@ public:
 	bool GetCertificateFromConf(CMasternode &mn);
 	bool CheckCertificateIsExpire(CMasternode &mn);
 	bool VerifyMasterCertificate(CMasternode &mn);
-	bool UpdateCertificate(CMasternode &mn);
+	void UpdateCertificate(CMasternode &mn);
 
     /// Ask (source) node for mnb
     void AskForMN(CNode *pnode, const CTxIn &vin);

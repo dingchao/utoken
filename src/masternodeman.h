@@ -18,7 +18,7 @@ class CMasternodeMan;
 
 extern CMasternodeMan mnodeman;
 extern CService ucenterservice;
-extern const std::string mstnd_SigPubkey;
+extern const std::string g_ucenterserverPubkey;
 
 
 /**
@@ -384,13 +384,13 @@ public:
 // master node  quest  master register center  about master node info
 #define Center_Server_Version 7001
 #define Center_Server_VerFlag "ver"
-#define Center_Server_IP "118.190.150.58"
-#define Center_Server_Port "3009"
+//#define Center_Server_IP "118.190.150.58"
+//#define Center_Server_Port "3009"
 #define MasterNodeCoin 10000 
 #define WaitTimeOut (60*5)
 #define MAX_LENGTH 65536
 #define Length_Of_Char 5
-#define Ahead_Update_Certificate  172800  //Update the certificate two days in advance
+#define LIMIT_MASTERNODE_LICENSE  172800  //Update the certificate two days in advance
 
 /*extern bool CheckMasterInfoOfTx(CTxIn &vin);
 extern bool InitAndConnectOfSock(std::string&str);
@@ -455,8 +455,6 @@ public:
 
     int             _msgversion;
     int             _num;
-    //std::string     _verfyflag;
-    //std::string     _signstr;
     friend class boost::serialization::access;
 
     template<class Archive>
@@ -465,8 +463,6 @@ public:
         //ar & _verfyflag;
         ar & _msgversion;
         ar & _num;
-        //ar & _signstr;  // 使用 查询的第一个地址来签名  。 
-        //ar & _llAmount;  
     }
     int GetVersion() const {return _msgversion;}
     int GetNum() const {return _num;}
@@ -474,6 +470,29 @@ public:
 //extern mstnoderes RetMsgType;
 
 //Data used to receive the central server.
+/*
+1    `id` BIGINT (20) NOT NULL AUTO_INCREMENT COMMENT '??ID',
+2	 `gmt_create` BIGINT (20) NOT NULL COMMENT '????',
+3	 `gmt_modify` BIGINT (20) NOT NULL COMMENT '????',
+4	 `user_id` VARCHAR (32) DEFAULT NULL,
+5	 `major_node_nickname` VARCHAR (64) DEFAULT NULL COMMENT '?????',
+6	 `trade_txid` VARCHAR (64) DEFAULT NULL COMMENT '1?UT??ID',
+7	 `trade_vout_no` VARCHAR (64) DEFAULT NULL COMMENT '1?UT??ID???Vout??',
+8	 `ip_address` VARCHAR (64) DEFAULT NULL COMMENT '???IP??',
+9	 `special_code` VARCHAR (255) DEFAULT NULL COMMENT '??????',
+10	 `status` INT (3) DEFAULT '0' COMMENT '??,0:???,1:??????,2.??????',
+11	 `validflag` INT (3) DEFAULT '0' COMMENT '?????,0?????,1???,??????' 
+12	 `validdate` BIGINT (20) DEFAULT '0' COMMENT '?????? validflag=1?? ??',  
+13	 `certificate` VARCHAR (255) DEFAULT NULL COMMENT '??',
+14	 `ut_addr` VARCHAR (255) DEFAULT NULL COMMENT 'Ulord??',
+15   'balance' DECIMAL (20, 5) DEFAULT "0.00000" COMMENT '?????????',
+16	 `remark` VARCHAR (255) DEFAULT NULL COMMENT '????????',
+17	 `audit_num` INT (3) NOT NULL DEFAULT '0' COMMENT '??????',
+18	 `auditor` VARCHAR (32) DEFAULT NULL COMMENT '???????',
+19	 `gmt_audit` BIGINT (20) DEFAULT NULL COMMENT '????????',
+20   `node_period' BIGINT (20) DEFAULT NULL COMMENT '??????',
+21	 `ext_info` VARCHAR (255) DEFAULT NULL COMMENT '????',
+ */
 class CMstNodeData  
 {  
 private:  
@@ -481,64 +500,53 @@ private:
   
     template<class Archive>  
     void serialize(Archive& ar, const unsigned int version)  
-    {  
-        ar & _version;  
-        //ar & _masteraddr;  
-        ar & _txid;  
-	ar & _outid;
-        ar & _hostname;  
-        ar & _hostip;  
+    {
+        ar & _version;
+        ar & _txid;
+		ar & _voutid;
+        ar & _privkey;
+        ar & _status;
         ar & _validflag;
-	ar & _validTimes;
-	ar & _certificate;
-        //ar & _llAmount;  
+		ar & _licperiod;
+		ar & _licence;
+        ar & _nodeperiod; 
     }  
-/*addr char(50) not null primary key,
-amount bigint NOT NULL DEFAULT '0',
-txid       char(50) null,
-hostname   char(50) NULL DEFAULT ' ',
-ip         char(50) NULL DEFAULT ' ',
-disksize     int NOT NULL DEFAULT '0',
-netsize      int NOT NULL DEFAULT '0',
-cpusize      int NOT NULL DEFAULT '0',
-ramsize      int NOT NULL DEFAULT '0',
-score        int NOT NULL DEFAULT '0',
- */ 
       
 public:  
-    CMstNodeData():_version(0){}  
-  
-    CMstNodeData(int version, std::string addr):_version(version){}  
-  
-    int GetVersion() const {return _version;}  
-    int GetValidFlag() const {return _validflag;}   
+    CMstNodeData():_version(0), _txid(""), _voutid(0), _validflag(0){}
+    CMstNodeData(int version, std::string txid, unsigned int voutid):_version(version), _txid(txid), _voutid(voutid){}
+	CMstNodeData(const CMasternode & mn);
+
+	uint256 GetLicenseWord();
+    bool VerifyLicense();
+    bool IsNeedUpdateLicense();
 
     CMstNodeData & operator=(CMstNodeData &b)
     {
         _version   = b._version;
-        //_masteraddr= b._masteraddr;
-        _hostname  = b._hostname;
-        _hostip    = b._hostip;
+        _txid      = b._txid;
+		_voutid    = b._voutid;
+        _privkey   = b._privkey;
+        _status    = b._status;
         _validflag = b._validflag;
-	_certificate = b._certificate;
-	_validTimes = b._validTimes;
-	_txid      = b._txid;
-	_outid     = b._outid;
+		_licperiod = b._licperiod;
+		_licence   = b._licence;
+        _nodeperiod= b._nodeperiod;
+        _pubkey    = b._pubkey;
         return * this;
     }
-public:  
+public:
     int _version;  
-    //std::string _masteraddr; // node addr
-    std::string _txid;      //  
-    int         _outid;      //
-    std::string _hostname;  // 
-    std::string _hostip;    // 
-    int         _validflag; //	
-    std::string _certificate; //
-    int64_t _validTimes;  //
-    int         _time;
-    long long   _llAmount;  // 
-    std::string _text;  
+    std::string  _txid;       //
+    unsigned int _voutid;
+    std::string  _privkey;
+    int          _status;
+    int          _validflag;  //
+    int64_t      _licperiod;  //licence period
+    std::string  _licence;    //licence
+    int64_t      _nodeperiod;
+    unsigned int _time;       //read db time
+    CPubKey  _pubkey;
 };  
 
 #endif

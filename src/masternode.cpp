@@ -740,7 +740,7 @@ bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
     std::string strMessage1 = addr.ToString(false) + boost::lexical_cast<std::string>(sigTime) +
                     pubKeyCollateralAddress.GetID().ToString() + pubKeyMasternode.GetID().ToString() +
                     boost::lexical_cast<std::string>(nProtocolVersion);
-	LogPrintf("CMasternodeBroadcast::strMessage1=%s\n"，strMessage1);
+	LogPrintf("CMasternodeBroadcast::strMessage1=%s\n", strMessage1);
 	
     strMessage = addr.ToString(false) + pubKeyCollateralAddress.GetID().ToString() + pubKeyMasternode.GetID().ToString() +
                     boost::lexical_cast<std::string>(nProtocolVersion);   

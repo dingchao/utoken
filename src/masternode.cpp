@@ -744,14 +744,8 @@ bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
 	
     strMessage = addr.ToString(false) + pubKeyCollateralAddress.GetID().ToString() + pubKeyMasternode.GetID().ToString() +
                     boost::lexical_cast<std::string>(nProtocolVersion);   
-
-	//std::vector<unsigned char> Sig;
-    if(!privSendSigner.SignMessage(strMessage, vchSig, keyCollateralAddress)) {
-        LogPrintf("CMasternodeBroadcast::Sign -- SignMessage() failed\n");
-        return false;
-    }
-	LogPrintf("CMasternodeBroadcast::Sig=%s\n", vchSig);
-					
+	cout<<"strMessage"<<strMessage<<endl;
+	
 	std::string broadcastSign = GetArg("-broadcastSign", "");
 	if(broadcastSign.empty())
 	{

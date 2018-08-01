@@ -501,8 +501,7 @@ bool CMasternodeBroadcast::Create(CTxIn txin, CService service, CKey keyCollater
 
     LogPrint("masternode", "CMasternodeBroadcast::Create -- pubKeyCollateralAddressNew = %s, pubKeyMasternodeNew.GetID() = %s\n",
              CBitcoinAddress(pubKeyCollateralAddressNew.GetID()).ToString(),
-             pubKeyMasternodeNew.GetID().ToString());
-
+             pubKeyMasternodeNew.GetID().ToString());  
 
     CMasternodePing mnp(txin);
     if(!mnp.Sign(keyMasternodeNew, pubKeyMasternodeNew)) {
@@ -736,15 +735,11 @@ bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
     std::string strMessage;
 
     sigTime = GetAdjustedTime();
-
-    std::string strMessage1 = addr.ToString(false) + boost::lexical_cast<std::string>(sigTime) +
-                    pubKeyCollateralAddress.GetID().ToString() + pubKeyMasternode.GetID().ToString() +
-                    boost::lexical_cast<std::string>(nProtocolVersion);
-	LogPrintf("CMasternodeBroadcast::strMessage1=%s\n", strMessage1);
 	
     strMessage = addr.ToString(false) + pubKeyCollateralAddress.GetID().ToString() + pubKeyMasternode.GetID().ToString() +
-                    boost::lexical_cast<std::string>(nProtocolVersion);   
-	cout<<"strMessage"<<strMessage<<endl;
+                    boost::lexical_cast<std::string>(nProtocolVersion);
+	
+	LogPrintf("CMasternodeBroadcast::strMessage1=%s\n", strMessage);
 	
 	std::string broadcastSign = GetArg("-broadcastSign", "");
 	if(broadcastSign.empty())
@@ -752,8 +747,9 @@ bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
 		LogPrintf("CMasternodeBroadcast::Sign -- read broadcastSign Failed from conf\n");
 		return false;
 	}
-	vchSig.insert(vchSig.begin(), broadcastSign.begin(),broadcastSign.end());
-
+	
+    bool fInvalid = false;
+    vchSig = DecodeBase64(broadcastSign.c_str(), &fInvalid);
     if(!privSendSigner.VerifyMessage(pubKeyCollateralAddress, vchSig, strMessage, strError)) {
         LogPrintf("CMasternodeBroadcast::Sign -- VerifyMessage() failed, error: %s\n", strError);
         return false;

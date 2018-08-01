@@ -2813,13 +2813,26 @@ bool CWallet::GetMasternodeVinAndKeys(CTxIn& txinRet, CPubKey& pubKeyRet, CKey& 
     if(strTxHash.empty()) // No output specified, select the one specified by masternodeConfig
     {
     	CMasternodeConfig::CMasternodeEntry mne = masternodeConfig.GetLocalEntry();
-		if(mne.getTxHash() != "")
-		{			
-			return GetVinAndKeysFromOutput(txinRet, pubKeyRet, keyRet);
-
-		}
-		LogPrintf("CWallet::GetMasternodeVinAndKeys -- Could not locate the masternode configure vin, please check the masternode.conf\n");
-		return false;
+        if(mne.getPrivKey() != "")
+	    {
+            int index = atoi(mne.getOutputIndex().c_str());
+            uint256 txHash = uint256S(mne.getTxHash());
+            txinRet = CTxIn(txHash, index);
+			#if 0
+            CTransaction tx;
+            uint256 hashBlock;
+            GetTransaction(txHash, tx, Params().GetConsensus(), hashBlock, true);
+			return GetVinAndKeysFromOutput(tx.vout[index],txinRet, pubKeyRet, keyRet);
+			#else
+			
+			CCoins coins;
+        	pcoinsTip->GetCoins(txHash, coins)
+		
+            return GetVinAndKeysFromOutput(coins.vout[index],txinRet, pubKeyRet, keyRet);
+			#endif
+	    }
+	    LogPrintf("CWallet::GetMasternodeVinAndKeys -- Could not locate the masternode configure vin, please check the masternode.conf\n");
+	    return false;
     }
 
     // Find specific vin
@@ -2827,20 +2840,23 @@ bool CWallet::GetMasternodeVinAndKeys(CTxIn& txinRet, CPubKey& pubKeyRet, CKey& 
     int nOutputIndex = atoi(strOutputIndex.c_str());
 
 	txinRet = CTxIn(txHash,nOutputIndex);
-	return GetVinAndKeysFromOutput(txinRet, pubKeyRet, keyRet);
+    CCoins coins;
+    pcoinsTip->GetCoins(txHash, coins)
+		
+    return GetVinAndKeysFromOutput(coins.vout[index],txinRet, pubKeyRet, keyRet);
 
     LogPrintf("CWallet::GetMasternodeVinAndKeys -- Could not locate specified masternode vin\n");
     return false;
 }
 
-bool CWallet::GetVinAndKeysFromOutput(CTxIn& txinRet, CPubKey& pubKeyRet, CKey& keyRet)
+bool CWallet::GetVinAndKeysFromOutput(CTxOut vout, CTxIn& txinRet, CPubKey& pubKeyRet, CKey& keyRet)
 {
     // wait for reindex and/or import to finish
     if (fImporting || fReindex) return false;
 
     CScript pubScript;
 
-    pubScript = txinRet.prevPubKey; // the inputs PubKey
+    pubScript = vout.scriptPubKey; // the inputs PubKey
 
     CTxDestination address1;
     ExtractDestination(pubScript, address1);

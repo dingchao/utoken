@@ -2826,7 +2826,7 @@ bool CWallet::GetMasternodeVinAndKeys(CTxIn& txinRet, CPubKey& pubKeyRet, CKey& 
 			#else
 			
 			CCoins coins;
-        	pcoinsTip->GetCoins(txHash, coins)
+        	pcoinsTip->GetCoins(txHash, coins);
 		
             return GetVinAndKeysFromOutput(coins.vout[index],txinRet, pubKeyRet, keyRet);
 			#endif
@@ -2841,7 +2841,7 @@ bool CWallet::GetMasternodeVinAndKeys(CTxIn& txinRet, CPubKey& pubKeyRet, CKey& 
 
 	txinRet = CTxIn(txHash,nOutputIndex);
     CCoins coins;
-    pcoinsTip->GetCoins(txHash, coins)
+    pcoinsTip->GetCoins(txHash, coins);
 		
     return GetVinAndKeysFromOutput(coins.vout[index],txinRet, pubKeyRet, keyRet);
 

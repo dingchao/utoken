@@ -2843,7 +2843,7 @@ bool CWallet::GetMasternodeVinAndKeys(CTxIn& txinRet, CPubKey& pubKeyRet, CKey& 
     CCoins coins;
     pcoinsTip->GetCoins(txHash, coins);
 		
-    return GetVinAndKeysFromOutput(coins.vout[index],txinRet, pubKeyRet, keyRet);
+    return GetVinAndKeysFromOutput(coins.vout[nOutputIndex],txinRet, pubKeyRet, keyRet);
 
     LogPrintf("CWallet::GetMasternodeVinAndKeys -- Could not locate specified masternode vin\n");
     return false;

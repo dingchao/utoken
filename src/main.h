@@ -18,6 +18,7 @@
 #include "coins.h"
 #include "net.h"
 #include "claimtrie.h"
+#include "nametrie.h"
 #include "script/script_error.h"
 #include "sync.h"
 #include "versionbits.h"
@@ -748,7 +749,7 @@ bool DisconnectBlocks(int blocks);
 void ReprocessBlocks(int nBlocks);
 
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins */
-bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins, CClaimTrieCache& trieCache, bool fJustCheck = false);
+bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins, CClaimTrieCache& trieCache,bool fJustCheck = false);
 
 /** Context-independent validity checks */
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW = true);
@@ -842,6 +843,7 @@ extern CCoinsViewCache *pcoinsTip;
 /** Global variable that points to the active CClaimTrie (protected by cs_main) */                                                                                                                                                                                            
 extern CClaimTrie *pclaimTrie;
 
+extern CNameTrie *pnameTrie;
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
 

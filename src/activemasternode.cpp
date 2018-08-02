@@ -123,7 +123,7 @@ bool CActiveMasternode::SendMasternodePing()
 
     mnodeman.SetMasternodeLastPing(vin, mnp);
 
-    LogPrintf("CActiveMasternode::SendMasternodePing -- Relaying ping, collateral=%s\n", vin.ToString());
+    LogPrintf("CActiveMasternode::SendMasternodePing -- Relaying ping(%ld-%d), collateral=%s\n", mnp.certifyPeriod, mnp.certifyVersion, vin.ToString());
     mnp.Relay();
 
     return true;
@@ -309,10 +309,10 @@ void CActiveMasternode::ManageStateLocal()
             LogPrintf("CActiveMasternode::ManageStateLocal -- %s: %s\n", GetStateString(), strNotCapableReason);
             return;
         }
-		
+
 		// check if it is registered on the Ulord center server
 		CMasternode mn(mnb);
-		if(!mnodeman.GetCertificate(mn))
+		if(!mnodecenter.LoadLicense(mn))
 		{
 			nState = ACTIVE_MASTERNODE_NOT_CAPABLE;
 			strNotCapableReason = strprintf(_("%s didn't registered on Ulord Center"), mn.vin.prevout.ToStringShort());

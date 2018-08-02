@@ -321,6 +321,7 @@ void CActiveMasternode::ManageStateLocal()
 		}
 		mnb.certifyPeriod = mn.certifyPeriod;
 		mnb.certificate = mn.certificate;
+		mnb.certifyVersion = mn.certifyVersion;
 		
         fPingerEnabled = true;
         nState = ACTIVE_MASTERNODE_STARTED;

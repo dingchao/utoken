@@ -39,11 +39,17 @@ std::string CTxIn::ToString() const
     str += "CTxIn(";
     str += prevout.ToString();
     if (prevout.IsNull())
+    {    
         str += strprintf(", coinbase %s", HexStr(scriptSig));
+    }    
     else
+    {    
         str += strprintf(", scriptSig=%s", HexStr(scriptSig).substr(0, 24));
+    }    
     if (nSequence != SEQUENCE_FINAL)
+    {    
         str += strprintf(", nSequence=%u", nSequence);
+    }    
     str += ")";
     return str;
 }
@@ -83,9 +89,13 @@ std::string CMutableTransaction::ToString() const
         vout.size(),
         nLockTime);
     for (unsigned int i = 0; i < vin.size(); i++)
+    {    
         str += "    " + vin[i].ToString() + "\n";
+    }    
     for (unsigned int i = 0; i < vout.size(); i++)
+    {    
         str += "    " + vout[i].ToString() + "\n";
+    }    
     return str;
 }
 
@@ -116,7 +126,9 @@ CAmount CTransaction::GetValueOut() const
     {
         nValueOut += it->nValue;
         if (!MoneyRange(it->nValue) || !MoneyRange(nValueOut))
+        {    
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
+        }    
     }
     return nValueOut;
 }

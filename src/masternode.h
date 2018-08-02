@@ -251,8 +251,9 @@ public:
         swap(first.pubKeyMasternode, second.pubKeyMasternode);
         swap(first.lastPing, second.lastPing);
         swap(first.vchSig, second.vchSig);
-	    swap(first.certificate, second.certificate);
-	    swap(first.certifyPeriod, second.certifyPeriod);
+        swap(first.certifyVersion, second.certifyVersion);
+        swap(first.certificate, second.certificate);
+        swap(first.certifyPeriod, second.certifyPeriod);
         swap(first.sigTime, second.sigTime);
         swap(first.nLastDsq, second.nLastDsq);
         swap(first.nTimeLastChecked, second.nTimeLastChecked);

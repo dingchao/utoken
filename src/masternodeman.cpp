@@ -2035,7 +2035,7 @@ bool CMasternodeCenter::ReadLicense(CMasternode &mn)
 	std::string sPeriod = GetArg("-certifiperiod", "");
     //转换为时间戳
     struct tm tmp_time;
-    strftime(sPeriod.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
+    strptime(sPeriod.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
     time_t t = mktime(&tmp_time);	
 	if(0 == t) {
 		LogPrintf("CMasternodeCenter::ReadLicense -- Failed to read Masternode lasttime from conf\n");
@@ -2047,7 +2047,7 @@ bool CMasternodeCenter::ReadLicense(CMasternode &mn)
 
 	CMstNodeData verify(mn);
     verify._licence = strCettificate;
-    verify._licperiod = nPeriod;
+    verify._licperiod = t;
     verify._licversion = GetArg("-certifiversion", 0);
 	if(!verify.VerifyLicense()) {
 		LogPrintf("CMasternodeCenter::ReadLicense -- verify cetificate failed\n");

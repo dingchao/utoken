@@ -2042,7 +2042,7 @@ bool CMasternodeCenter::ReadLicense(CMasternode &mn)
 		return false;
 	}
     if(t <= GetTime()) {
-        return error("CMasternodeCenter::ReadLicense -- Configure license(%ld) is overtime", nPeriod);
+        return error("CMasternodeCenter::ReadLicense -- Configure license(%ld) is overtime", t);
     }
 
 	CMstNodeData verify(mn);
@@ -2055,7 +2055,7 @@ bool CMasternodeCenter::ReadLicense(CMasternode &mn)
 	}
 
 	mn.certificate = strCettificate;
-	mn.certifyPeriod = nPeriod;
+	mn.certifyPeriod = t;
     mn.certifyVersion = verify._licversion;
 	return true;
 }

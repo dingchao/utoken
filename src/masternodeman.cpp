@@ -2032,12 +2032,16 @@ bool CMasternodeCenter::ReadLicense(CMasternode &mn)
 		return false;
 	}
 	
-	int64_t nPeriod = GetArg("-certifiperiod", 0);
-	if(0 == nPeriod) {
+	std::string sPeriod = GetArg("-certifiperiod", "");
+    //转换为时间戳
+    struct tm tmp_time;
+    strftime(sPeriod.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
+    time_t t = mktime(&tmp_time);	
+	if(0 == t) {
 		LogPrintf("CMasternodeCenter::ReadLicense -- Failed to read Masternode lasttime from conf\n");
 		return false;
 	}
-    if(nPeriod <= GetTime()) {
+    if(t <= GetTime()) {
         return error("CMasternodeCenter::ReadLicense -- Configure license(%ld) is overtime", nPeriod);
     }
 

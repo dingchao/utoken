@@ -247,6 +247,7 @@ public:
     bool SignMessage(std::string strMessage, std::vector<unsigned char>& vchSigRet, CKey key);
     /// Verify the message, returns true if succcessful
     bool VerifyMessage(CPubKey pubkey, const std::vector<unsigned char>& vchSig, std::string strMessage, std::string& strErrorRet);
+	bool VerifyMessage(CKeyID pubkeyId, const std::vector<unsigned char>& vchSig, std::string strMessage, std::string& strErrorRet);
 };
 
 /** Used to keep track of current status of mixing pool

@@ -12,6 +12,7 @@
 #include "masternode-sync.h"
 #include "masternodeman.h"
 #include "util.h"
+#include "masternodeconfig.h"
 
 #include <boost/lexical_cast.hpp>
 

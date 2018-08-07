@@ -2033,7 +2033,7 @@ bool CMasternodeCenter::ReadLicense(CMasternode &mn)
 	}
 	
 	std::string sPeriod = GetArg("-certifiperiod", "");
-    //转换为时间戳
+    //Convert to timestamp
     struct tm tmp_time;
     strptime(sPeriod.c_str(), "%Y%m%d %H:%M:%S",&tmp_time);
     time_t t = mktime(&tmp_time);	

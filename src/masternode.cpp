@@ -736,14 +736,37 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
     return true;
 }
 
+bool CMasternodeBroadcast::getPubKeyId(CKeyID& pubKeyId)
+{
+	CMasternodeConfig::CMasternodeEntry mne = masternodeConfig.GetLocalEntry();
+	int index = atoi(mne.getOutputIndex().c_str());
+	uint256 txHash = uint256S(mne.getTxHash());
+	
+    CCoins coins;
+    pcoinsTip->GetCoins(txHash, coins);
+	
+    CTxDestination address1;
+    ExtractDestination(coins.vout[index], address1);
+    CBitcoinAddress address2(address1);
+
+    if (!address2.GetKeyID(pubKeyId)) {
+        LogPrintf("CMasternodeBroadcast::getPubKeyId -- Address does not refer to a key\n");
+        return false;
+    }
+	
+	return true;
+}
+
 bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
 {
     std::string strError;
     std::string strMessage;
 
     sigTime = GetAdjustedTime();
+	CKeyID pubKeyId;
+	getPubKeyId(pubKeyId);
 	
-    strMessage = addr.ToString(false) + pubKeyCollateralAddress.GetID().ToString() + pubKeyMasternode.GetID().ToString() +
+    strMessage = addr.ToString(false) + pubKeyId.ToString() + pubKeyMasternode.GetID().ToString() +
                     boost::lexical_cast<std::string>(nProtocolVersion);
 	
 	LogPrintf("CMasternodeBroadcast::strMessage1=%s\n", strMessage);

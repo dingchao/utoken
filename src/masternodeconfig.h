@@ -98,6 +98,7 @@ public:
     }
 
 	CMasternodeConfig::CMasternodeEntry GetLocalEntry();
+	bool CMasternodeConfig::IsLocalEntry();
 
 private:
     std::vector<CMasternodeEntry> entries;

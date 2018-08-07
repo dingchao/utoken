@@ -7,6 +7,7 @@
 #include "masternode-sync.h"
 #include "masternodeman.h"
 #include "protocol.h"
+#include "masternodeconfig.h"
 
 extern CWallet* pwalletMain;
 

@@ -770,7 +770,7 @@ bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
     strMessage = addr.ToString(false) + pubKeyId.ToString() + pubKeyMasternode.GetID().ToString() +
                     boost::lexical_cast<std::string>(nProtocolVersion);
 	
-	LogPrintf("CMasternodeBroadcast::strMessage1=%s\n", strMessage);
+	LogPrintf("CMasternodeBroadcast::strMessage=%s\n", strMessage);
 	
 	std::string broadcastSign = GetArg("-broadcastSign", "");
 	if(broadcastSign.empty())
@@ -781,10 +781,23 @@ bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
 	
     bool fInvalid = false;
     vchSig = DecodeBase64(broadcastSign.c_str(), &fInvalid);
-    if(!privSendSigner.VerifyMessage(pubKeyCollateralAddress, vchSig, strMessage, strError)) {
-        LogPrintf("CMasternodeBroadcast::Sign -- VerifyMessage() failed, error: %s\n", strError);
-        return false;
-    }
+
+	CHashWriter ss(SER_GETHASH, 0);
+    ss << strMessageMagic;
+    ss << strMessage;
+	
+	CPubKey pubkeyFromSig;
+	if(!pubkeyFromSig.RecoverCompact(ss.GetHash(), vchSig)) {
+		LogPrintf("CMasternodeBroadcast::Sign -- VerifyMessage() failed, error:\n");
+		return false;
+	}
+
+	if(pubkeyFromSig.GetID() != pubKeyId) {
+		LogPrintf("CMasternodeBroadcast::Sign -- Keys don't match: pubkey=%s, pubkeyFromSig=%s, strMessage=%s, vchSig=%s",
+					pubKeyId.ToString(), pubkeyFromSig.GetID().ToString(), strMessage,
+					EncodeBase64(&vchSig[0], vchSig.size()));
+		return false;
+	}
 
     return true;
 }

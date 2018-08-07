@@ -454,7 +454,7 @@ UniValue gobject(const UniValue& params, bool fHelp)
             std::vector<unsigned char> vchMasterNodeSignature;
             std::string strMasterNodeSignMessage;
 
-            CPubKey pubKeyCollateralAddress;
+            //CPubKey pubKeyCollateralAddress;
             CKey keyCollateralAddress;
             CPubKey pubKeyMasternode;
             CKey keyMasternode;
@@ -571,7 +571,7 @@ UniValue gobject(const UniValue& params, bool fHelp)
             std::vector<unsigned char> vchMasterNodeSignature;
             std::string strMasterNodeSignMessage;
 
-            CPubKey pubKeyCollateralAddress;
+            //CPubKey pubKeyCollateralAddress;
             CKey keyCollateralAddress;
             CPubKey pubKeyMasternode;
             CKey keyMasternode;

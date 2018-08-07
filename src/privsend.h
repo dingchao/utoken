@@ -240,7 +240,7 @@ class CPrivSendSigner
 {
 public:
     /// Is the input associated with this public key? (and there is 10000 UT - checking if valid masternode)
-    bool IsVinAssociatedWithPubkey(const CTxIn& vin, const CPubKey& pubkey);
+    bool IsVinAssociatedWithPubkey(const CTxIn& vin, const CKeyID& pubkeyId);
     /// Set the private/public key values, returns true if successful
     bool GetKeysFromSecret(std::string strSecret, CKey& keyRet, CPubKey& pubkeyRet);
     /// Sign the message, returns true if successful

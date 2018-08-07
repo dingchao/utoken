@@ -177,6 +177,8 @@ public:
     CTxIn vin;
     CService addr;
     CPubKey pubKeyCollateralAddress;
+	CKeyID pubKeyId;
+	
     CPubKey pubKeyMasternode;
     CMasternodePing lastPing;
     std::vector<unsigned char> vchSig;
@@ -215,6 +217,7 @@ public:
         READWRITE(vin);
         READWRITE(addr);
         READWRITE(pubKeyCollateralAddress);
+		READWRITE(pubKeyId);
         READWRITE(pubKeyMasternode);
         READWRITE(lastPing);
         READWRITE(vchSig);
@@ -248,6 +251,7 @@ public:
         swap(first.vin, second.vin);
         swap(first.addr, second.addr);
         swap(first.pubKeyCollateralAddress, second.pubKeyCollateralAddress);
+		swap(first.pubKeyId, second.pubKeyId);
         swap(first.pubKeyMasternode, second.pubKeyMasternode);
         swap(first.lastPing, second.lastPing);
         swap(first.vchSig, second.vchSig);
@@ -392,6 +396,7 @@ public:
         READWRITE(vin);
         READWRITE(addr);
         READWRITE(pubKeyCollateralAddress);
+		READWRITE(pubKeyId);
         READWRITE(pubKeyMasternode);
         READWRITE(vchSig);
         READWRITE(certifyVersion);
@@ -416,7 +421,7 @@ public:
         // END REMOVE
         //
             ss << vin;
-            ss << pubKeyCollateralAddress;
+            ss << pubKeyId;
             ss << sigTime;
         }
         return ss.GetHash();
@@ -436,7 +441,7 @@ public:
     bool CheckSignature(int& nDos);
     void Relay();
 
-	bool getPubKeyId(CKeyID& pubKeyId);
+	bool getPubKeyId();
 };
 
 class CMasternodeVerification

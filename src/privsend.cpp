@@ -2258,10 +2258,10 @@ std::string CPrivSendPool::GetMessageByID(PoolMessage nMessageID)
     }
 }
 
-bool CPrivSendSigner::IsVinAssociatedWithPubkey(const CTxIn& txin, const CPubKey& pubkey)
+bool CPrivSendSigner::IsVinAssociatedWithPubkey(const CTxIn& txin, const CKeyID& pubkeyId)
 {
     CScript payee;
-    payee = GetScriptForDestination(pubkey.GetID());
+    payee = GetScriptForDestination(pubkeyId);
 
     CTransaction tx;
     uint256 hash;
@@ -2316,6 +2316,29 @@ bool CPrivSendSigner::VerifyMessage(CPubKey pubkey, const std::vector<unsigned c
 
     return true;
 }
+
+bool CPrivSendSigner::VerifyMessage(CKeyID pubkeyId, const std::vector<unsigned char>& vchSig, std::string strMessage, std::string& strErrorRet)
+{
+    CHashWriter ss(SER_GETHASH, 0);
+    ss << strMessageMagic;
+    ss << strMessage;
+
+    CPubKey pubkeyFromSig;
+    if(!pubkeyFromSig.RecoverCompact(ss.GetHash(), vchSig)) {
+        strErrorRet = "Error recovering public key.";
+        return false;
+    }
+
+    if(pubkeyFromSig.GetID() != pubkeyId) {
+        strErrorRet = strprintf("Keys don't match: pubkey=%s, pubkeyFromSig=%s, strMessage=%s, vchSig=%s",
+                    pubkeyId.ToString(), pubkeyFromSig.GetID().ToString(), strMessage,
+                    EncodeBase64(&vchSig[0], vchSig.size()));
+        return false;
+    }
+
+    return true;
+}
+
 
 bool CPrivSendEntry::AddScriptSig(const CTxIn& txin)
 {

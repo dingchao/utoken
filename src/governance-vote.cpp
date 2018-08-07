@@ -232,7 +232,7 @@ void CGovernanceVote::Relay() const
 bool CGovernanceVote::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode)
 {
     // Choose coins to use
-    CPubKey pubKeyCollateralAddress;
+    //CPubKey pubKeyCollateralAddress;
     CKey keyCollateralAddress;
 
     std::string strError;

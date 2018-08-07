@@ -21,6 +21,7 @@ CMasternode::CMasternode() :
     vin(),
     addr(),
     pubKeyCollateralAddress(),
+    pubKeyId(),
     pubKeyMasternode(),
     lastPing(),
     vchSig(),
@@ -47,6 +48,7 @@ CMasternode::CMasternode(CService addrNew, CTxIn vinNew, CPubKey pubKeyCollatera
     vin(vinNew),
     addr(addrNew),
     pubKeyCollateralAddress(pubKeyCollateralAddressNew),
+    pubKeyId(pubKeyId),
     pubKeyMasternode(pubKeyMasternodeNew),
     lastPing(),
     vchSig(),
@@ -73,6 +75,7 @@ CMasternode::CMasternode(const CMasternode& other) :
     vin(other.vin),
     addr(other.addr),
     pubKeyCollateralAddress(other.pubKeyCollateralAddress),
+    pubKeyId(other.pubKeyId),
     pubKeyMasternode(other.pubKeyMasternode),
     lastPing(other.lastPing),
     vchSig(other.vchSig),
@@ -99,6 +102,7 @@ CMasternode::CMasternode(const CMasternodeBroadcast& mnb) :
     vin(mnb.vin),
     addr(mnb.addr),
     pubKeyCollateralAddress(mnb.pubKeyCollateralAddress),
+    pubKeyId(mnb.pubKeyId),
     pubKeyMasternode(mnb.pubKeyMasternode),
     lastPing(mnb.lastPing),
     vchSig(mnb.vchSig),
@@ -424,7 +428,8 @@ void CMasternode::UpdateLastPaid(const CBlockIndex *pindex, int nMaxBlocksToScan
 
     const CBlockIndex *BlockReading = pindex;
 
-    CScript mnpayee = GetScriptForDestination(pubKeyCollateralAddress.GetID());
+    //CScript mnpayee = GetScriptForDestination(pubKeyCollateralAddress.GetID());
+    CScript mnpayee = GetScriptForDestination(pubKeyId);
     // LogPrint("masternode", "CMasternode::UpdateLastPaidBlock -- searching for block with payment to %s\n", vin.prevout.ToStringShort());
 
     LOCK(cs_mapMasternodeBlocks);
@@ -570,7 +575,7 @@ bool CMasternodeBroadcast::SimpleCheck(int& nDos)
     }
 
     CScript pubkeyScript;
-    pubkeyScript = GetScriptForDestination(pubKeyCollateralAddress.GetID());
+    pubkeyScript = GetScriptForDestination(pubKeyId);
 
     if(pubkeyScript.size() != 25) {
         LogPrintf("CMasternodeBroadcast::SimpleCheck -- pubKeyCollateralAddress has the wrong size\n");
@@ -628,7 +633,7 @@ bool CMasternodeBroadcast::Update(CMasternode* pmn, int& nDos)
     }
 
     // IsVnAssociatedWithPubkey is validated once in CheckOutpoint, after that they just need to match
-    if(pmn->pubKeyCollateralAddress != pubKeyCollateralAddress) {
+    if(pmn->pubKeyId != pubKeyId) {
         LogPrintf("CMasternodeBroadcast::Update -- Got mismatched pubKeyCollateralAddress and vin\n");
         nDos = 33;
         return false;
@@ -700,7 +705,7 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
 
     // make sure the vout that was signed is related to the transaction that spawned the Masternode
     //  - this is expensive, so it's only done once per Masternode
-    if(!privSendSigner.IsVinAssociatedWithPubkey(vin, pubKeyCollateralAddress)) {
+    if(!privSendSigner.IsVinAssociatedWithPubkey(vin, pubKeyId)) {
         LogPrintf("CMasternodeMan::CheckOutpoint -- Got mismatched pubKeyCollateralAddress and vin\n");
         nDos = 33;
         return false;
@@ -737,7 +742,7 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
     return true;
 }
 
-bool CMasternodeBroadcast::getPubKeyId(CKeyID& pubKeyId)
+bool CMasternodeBroadcast::getPubKeyId()
 {
 	CMasternodeConfig::CMasternodeEntry mne = masternodeConfig.GetLocalEntry();
 	int index = atoi(mne.getOutputIndex().c_str());
@@ -764,8 +769,8 @@ bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
     std::string strMessage;
 
     sigTime = GetAdjustedTime();
-	CKeyID pubKeyId;
-	getPubKeyId(pubKeyId);
+	
+	getPubKeyId();
 	
     strMessage = addr.ToString(false) + pubKeyId.ToString() + pubKeyMasternode.GetID().ToString() +
                     boost::lexical_cast<std::string>(nProtocolVersion);
@@ -781,23 +786,10 @@ bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
 	
     bool fInvalid = false;
     vchSig = DecodeBase64(broadcastSign.c_str(), &fInvalid);
-
-	CHashWriter ss(SER_GETHASH, 0);
-    ss << strMessageMagic;
-    ss << strMessage;
-	
-	CPubKey pubkeyFromSig;
-	if(!pubkeyFromSig.RecoverCompact(ss.GetHash(), vchSig)) {
-		LogPrintf("CMasternodeBroadcast::Sign -- VerifyMessage() failed, error:\n");
-		return false;
-	}
-
-	if(pubkeyFromSig.GetID() != pubKeyId) {
-		LogPrintf("CMasternodeBroadcast::Sign -- Keys don't match: pubkey=%s, pubkeyFromSig=%s, strMessage=%s, vchSig=%s",
-					pubKeyId.ToString(), pubkeyFromSig.GetID().ToString(), strMessage,
-					EncodeBase64(&vchSig[0], vchSig.size()));
-		return false;
-	}
+    if(!privSendSigner.VerifyMessage(pubKeyId, vchSig, strMessage, strError)) {
+        LogPrintf("CMasternodeBroadcast::Sign -- VerifyMessage() failed, error: %s\n", strError);
+        return false;
+    }
 
     return true;
 }
@@ -850,12 +842,12 @@ bool CMasternodeBroadcast::CheckSignature(int& nDos)
     //
     // END REMOVE
     //
-        strMessage = addr.ToString(false) + pubKeyCollateralAddress.GetID().ToString() + pubKeyMasternode.GetID().ToString() +
+        strMessage = addr.ToString(false) + pubKeyId.ToString() + pubKeyMasternode.GetID().ToString() +
                         boost::lexical_cast<std::string>(nProtocolVersion);
 
-        LogPrint("masternode", "CMasternodeBroadcast::CheckSignature -- strMessage: %s  pubKeyCollateralAddress address: %s  sig: %s\n", strMessage, CBitcoinAddress(pubKeyCollateralAddress.GetID()).ToString(), EncodeBase64(&vchSig[0], vchSig.size()));
+        LogPrint("masternode", "CMasternodeBroadcast::CheckSignature -- strMessage: %s  pubKeyCollateralAddress address: %s  sig: %s\n", strMessage, CBitcoinAddress(pubKeyId).ToString(), EncodeBase64(&vchSig[0], vchSig.size()));
 
-        if(!privSendSigner.VerifyMessage(pubKeyCollateralAddress, vchSig, strMessage, strError)){
+        if(!privSendSigner.VerifyMessage(pubKeyId, vchSig, strMessage, strError)){
             LogPrintf("CMasternodeBroadcast::CheckSignature -- Got bad Masternode announce signature, error: %s\n", strError);
             nDos = 100;
             return false;
